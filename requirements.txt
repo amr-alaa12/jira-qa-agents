@@ -1,1 +1,10 @@
 
+requests
+python-dotenv
+pandas
+scikit-learn
+joblib
+pytest
+streamlit
+openpyxl
+
