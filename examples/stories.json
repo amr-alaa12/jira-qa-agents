@@ -1,1 +1,13 @@
 
+[
+  {
+    "key": "SHOP-1",
+    "title": "Reset password",
+    "description": "As a user, I want to reset my password so that I can log in again.",
+    "acceptance_criteria": [
+      "The user receives a reset link by email",
+      "The new password must be at least 8 characters"
+    ]
+  }
+]
+
