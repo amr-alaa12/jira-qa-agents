@@ -1,1 +1,16 @@
 
+[
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC1",
+    "title": "Password with 7 characters is rejected",
+    "type": "boundary",
+    "steps": [
+      "Open the reset page",
+      "Enter a 7-character password",
+      "Click Save"
+    ],
+    "expected": "An error says the password is too short"
+  }
+]
+
