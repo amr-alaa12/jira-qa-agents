@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jira QA Agents</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">Q</div>
+            <div>
+                <h2>Jira QA Agents</h2>
+                <p>Quality Engineering</p>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#" class="nav-item active">Dashboard</a>
+            <a href="#stories" class="nav-item">User Stories</a>
+            <a href="#results" class="nav-item">Test Cases</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="status-dot"></span>
+            Local workspace
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">QUALITY ASSURANCE / OVERVIEW</p>
+                <h1>Test Generation Dashboard</h1>
+                <p class="subtitle">
+                    Turn acceptance criteria into structured test cases.
+                </p>
+            </div>
+            <div class="avatar">QA</div>
+        </header>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p>Selected Story</p>
+                <h2 id="story-count">01</h2>
+                <span>Sample workspace</span>
+            </article>
+            <article class="stat-card">
+                <p>Acceptance Criteria</p>
+                <h2 id="criteria-count">02</h2>
+                <span>Requirements to validate</span>
+            </article>
+            <article class="stat-card">
+                <p>Generated Test Cases</p>
+                <h2 id="test-count">00</h2>
+                <span id="test-status">Not generated yet</span>
+            </article>
+        </section>
+
+        <section class="panel" id="stories">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">STEP 01</p>
+                    <h2>Select a user story</h2>
+                </div>
+                <span class="tag">SAMPLE DATA</span>
+            </div>
+
+            <label for="story-select">Available stories</label>
+            <select id="story-select">
+                <option value="SHOP-1">SHOP-1 — Reset password</option>
+            </select>
+
+            <div class="story-details">
+                <div>
+                    <span class="story-key" id="story-key">SHOP-1</span>
+                    <h3 id="story-title">Reset password</h3>
+                </div>
+                <p id="story-description">
+                    As a user, I want to reset my password so that I can log in again.
+                </p>
+            </div>
+
+            <h3 class="subheading">Acceptance Criteria</h3>
+            <div id="criteria-list" class="criteria-list"></div>
+        </section>
+
+        <section class="panel" id="results">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">STEP 02</p>
+                    <h2>Generated test cases</h2>
+                </div>
+                <span class="tag">AUTOMATION</span>
+            </div>
+
+            <p class="muted">
+                Review the predicted categories and expected test results.
+            </p>
+
+            <button id="generate-btn" class="primary-button">
+                Generate Test Cases
+            </button>
+
+            <div id="message" class="message" role="status">
+                Ready to generate test cases using sample data.
+            </div>
+
+            <div id="test-results" class="test-results">
+                <div class="empty-state">
+                    <div class="empty-icon">✓</div>
+                    <h3>No test cases generated</h3>
+                    <p>Select a story and click Generate Test Cases.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            Jira QA Agents <span>·</span> Automated Quality Engineering
+        </footer>
+    </main>
+</body>
+</html>
