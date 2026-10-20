@@ -7,6 +7,51 @@ from sklearn.metrics import accuracy_score
 import joblib
 import os
 
+<<<<<<< HEAD
+=======
+# 1. Read the dataset directly from Member 2's branch
+# If their branch name is 'dataset-builder':
+github_csv_url = "https://raw.githubusercontent.com/amr-alaa12/jira-qa-agents/main/data/requirements.csv"
+# Alternative: If you already cloned/switched to the branch locally, you can use:
+# csv_path = "data/requirements.csv"
+
+print(f"Loading training data from: {github_csv_url}")
+try:
+    df = pd.read_csv(github_csv_url)
+except Exception as e:
+    # Fallback to local file if you checked out the branch locally
+    print(f"Could not download directly ({e}), checking local path...")
+    df = pd.read_csv("data/requirements.csv")
+
+print(f"Successfully loaded {len(df)} rows.")
+
+# 2. Split data: 80% train, 20% test
+X_train, X_test, y_train, y_test = train_test_split(
+    df['text'], df['category'], test_size=0.2, random_state=42
+)
+
+# 3. Create pipeline (TF-IDF Vectorizer + Logistic Regression)
+model_pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer()),
+    ('classifier', LogisticRegression(max_iter=1000))
+])
+
+# 4. Train the model
+print("Training the classifier...")
+model_pipeline.fit(X_train, y_train)
+
+# 5. Evaluate accuracy
+y_pred = model_pipeline.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Model Accuracy: {accuracy * 100:.2f}%\n")
+
+# 6. Save model to model/model.pkl
+os.makedirs('model', exist_ok=True)
+joblib.dump(model_pipeline, 'model/model.pkl')
+print("Model saved to model/model.pkl\n")
+
+# 7. Prediction function as required by spec
+>>>>>>> c4a70c23812fe3a3178fe1d66a5cad1f6cab34bc
 def predict_category(sentence):
     """Loads the saved model and predicts the category of a given sentence."""
     saved_model = joblib.load('model/model.pkl')
@@ -15,6 +60,7 @@ def predict_category(sentence):
     confidence = max(probs)
     return category, round(confidence, 2)
 
+<<<<<<< HEAD
 def train_model():
     """Downloads the dataset, trains the model, evaluates it, and saves it."""
     # 1. Read the dataset directly from Member 2's branch
@@ -67,3 +113,12 @@ if __name__ == "__main__":
     print(f"Sentence: '{test_input}'")
     print(f"Predicted Category: {cat}")
     print(f"Confidence: {conf}")
+=======
+# Test run
+test_input = "The page loads in under 2 seconds"
+cat, conf = predict_category(test_input)
+print("--- Prediction Test ---")
+print(f"Sentence: '{test_input}'")
+print(f"Predicted Category: {cat}")
+print(f"Confidence: {conf}")
+>>>>>>> c4a70c23812fe3a3178fe1d66a5cad1f6cab34bc
