@@ -122,7 +122,11 @@ _EMPTY = _Sample(None, "left empty")
 
 def validation(ctx: StoryContext, criterion: str) -> List[Draft]:
     kind = _field_kind(criterion) or _field_kind(ctx.feature)
-    field = text.subject(criterion) or (kind.label if kind else "input")
+
+    if kind:
+        field = kind.label
+    else:
+        field = text.subject(criterion) or "input"
     if kind:
         valid_entry: str = f'"{kind.valid}"'
         invalid: Sequence[_Sample] = kind.invalid
