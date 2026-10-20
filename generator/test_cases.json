@@ -1,0 +1,62 @@
+[
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC1",
+    "title": "User receives a reset link by email",
+    "type": "functional",
+    "steps": [
+      "Open the reset password page",
+      "Reset the password using valid data",
+      "Check the result"
+    ],
+    "expected": "The user receives a reset link by email"
+  },
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC2",
+    "title": "Failure path: user receives a reset link by email",
+    "type": "functional",
+    "steps": [
+      "Open the reset password page",
+      "Reset the password using invalid or missing data",
+      "Check the result"
+    ],
+    "expected": "The action is not completed, a clear error message is shown, and this does not happen: the user receives a reset link by email"
+  },
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC3",
+    "title": "New password with 7 characters is rejected",
+    "type": "boundary",
+    "steps": [
+      "Open the reset password page",
+      "Enter a new password with 7 characters",
+      "Submit the form"
+    ],
+    "expected": "The new password is rejected and an error message explains the limit (at least 8 characters)"
+  },
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC4",
+    "title": "New password with 8 characters is accepted",
+    "type": "boundary",
+    "steps": [
+      "Open the reset password page",
+      "Enter a new password with 8 characters",
+      "Submit the form"
+    ],
+    "expected": "The new password is accepted because 8 characters is within the limit (at least 8 characters)"
+  },
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC5",
+    "title": "New password with 9 characters is accepted",
+    "type": "boundary",
+    "steps": [
+      "Open the reset password page",
+      "Enter a new password with 9 characters",
+      "Submit the form"
+    ],
+    "expected": "The new password is accepted because 9 characters is within the limit (at least 8 characters)"
+  }
+]
