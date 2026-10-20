@@ -1,4 +1,4 @@
-
+import streamlit as st
 import json
 import os
 import re
@@ -77,12 +77,30 @@ def extract_criteria(description):
 
 
 def fetch_stories(project_key):
+    
     """Fetch Jira issues and save them using the agreed JSON schema."""
-    base_url = os.getenv("JIRA_BASE_URL", "").rstrip("/")
-    email = os.getenv("JIRA_EMAIL", "")
-    token = os.getenv("JIRA_API_TOKEN", "")
-    ac_field = os.getenv("JIRA_AC_FIELD", "").strip()
 
+    # Read Streamlit Cloud Secrets, falling back to local .env
+    try:
+        secrets = st.secrets
+    except Exception:
+        secrets = {}
+
+    base_url = str(
+        secrets.get("JIRA_BASE_URL", os.getenv("JIRA_BASE_URL", ""))
+    ).rstrip("/")
+
+    email = str(
+        secrets.get("JIRA_EMAIL", os.getenv("JIRA_EMAIL", ""))
+    )
+
+    token = str(
+        secrets.get("JIRA_API_TOKEN", os.getenv("JIRA_API_TOKEN", ""))
+    )
+
+    ac_field = str(
+        secrets.get("JIRA_AC_FIELD", os.getenv("JIRA_AC_FIELD", ""))
+    ).strip()
     if not all([base_url, email, token]):
         raise ValueError(
             "Missing JIRA_BASE_URL, JIRA_EMAIL, or JIRA_API_TOKEN "
