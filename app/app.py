@@ -1,13 +1,17 @@
 
 import json
+import sys
 from pathlib import Path
+
+# Add the project root to Python's import path
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 import streamlit as st
 
 from model.train_and_predict import predict_category
 from generator.core import generate_test_cases
 from jira.fetch import fetch_stories
-
 st.set_page_config(
     page_title="Jira QA Agents",
     page_icon="🧪",
