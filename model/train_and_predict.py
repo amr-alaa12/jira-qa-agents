@@ -9,8 +9,7 @@ import os
 
 # 1. Read the dataset directly from Member 2's branch
 # If their branch name is 'dataset-builder':
-github_csv_url = "https://raw.githubusercontent.com/amr-alaa12/jira-qa-agents/dataset-builder/data/requirements.csv"
-
+github_csv_url = "https://raw.githubusercontent.com/amr-alaa12/jira-qa-agents/feature/dataset-builder/data/requirements.csv"
 # Alternative: If you already cloned/switched to the branch locally, you can use:
 # csv_path = "data/requirements.csv"
 
