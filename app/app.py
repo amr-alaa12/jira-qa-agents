@@ -4,6 +4,10 @@ from pathlib import Path
 
 import streamlit as st
 
+from model.train_and_predict import predict_category
+from generator.core import generate_test_cases
+from jira.fetch import fetch_stories
+
 st.set_page_config(
     page_title="Jira QA Agents",
     page_icon="🧪",
@@ -59,28 +63,7 @@ SAMPLE_STORIES = [
 ]
 
 
-def predict_demo_category(criterion: str) -> str:
-    """Simple mock predictions for the frontend demonstration."""
-    text = criterion.lower()
 
-    rules = [
-        (["8 characters", "at least", "maximum", "minimum", "limit"],
-         "boundary"),
-        (["valid email", "empty", "invalid", "required", "rejected"],
-         "validation"),
-        (["securely", "authenticated", "unauthorized", "owner"],
-         "security"),
-        (["under", "seconds", "response time", "fast"],
-         "performance"),
-        (["helpful", "easy", "clear", "understand"],
-         "usability"),
-    ]
-
-    for keywords, category in rules:
-        if any(word in text for word in keywords):
-            return category
-
-    return "functional"
 
 
 def load_json_stories(path: Path):
@@ -100,121 +83,31 @@ def load_json_stories(path: Path):
 
 
 def get_stories():
-    """Prefer available local stories; otherwise use sample data."""
+    """Fetch Jira stories, with local and sample fallbacks."""
     root = Path(__file__).resolve().parent.parent
 
+    try:
+        stories = fetch_stories("KAN")
+        if stories:
+            return stories, "Connected to Jira project KAN"
+    except Exception as error:
+        st.warning(f"Could not fetch Jira stories: {error}")
+
     candidates = [
+        root / "stories.json",
         root / "examples" / "stories.json",
         root / "data" / "stories.json",
-        root / "stories.json",
     ]
 
     for candidate in candidates:
         stories = load_json_stories(candidate)
-
         if stories:
             return stories, f"Loaded from {candidate.name}"
 
     return SAMPLE_STORIES, "Using built-in sample stories"
 
 
-def generate_demo_cases(story, classified_criteria):
-    """Generate illustrative test cases for the demo."""
-    cases = []
 
-    def add_case(category, title, steps, expected):
-        cases.append({
-            "story_key": story["key"],
-            "id": f'{story["key"]}-TC{len(cases) + 1}',
-            "title": title,
-            "type": category,
-            "steps": steps,
-            "expected": expected,
-        })
-
-    for item in classified_criteria:
-        criterion = item["criterion"]
-        category = item["category"]
-
-        if category == "boundary":
-            add_case(
-                category,
-                f"Value below the minimum: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter a value below the required minimum",
-                    "Submit the form",
-                ],
-                "The application rejects the value and displays an error.",
-            )
-            add_case(
-                category,
-                f"Value at the minimum: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter a value at the required minimum",
-                    "Submit the form",
-                ],
-                "The application accepts the value if other rules are satisfied.",
-            )
-
-        elif category == "validation":
-            add_case(
-                category,
-                f"Invalid input is rejected: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter invalid or missing data",
-                    "Submit the form",
-                ],
-                f"The application handles invalid input for: {criterion}",
-            )
-
-        elif category == "security":
-            add_case(
-                category,
-                f"Access control is enforced: {criterion}",
-                [
-                    "Attempt the action without valid authorization",
-                    "Review the result",
-                ],
-                "The application prevents unauthorized access.",
-            )
-
-        elif category == "performance":
-            add_case(
-                category,
-                f"Performance requirement: {criterion}",
-                [
-                    "Perform the relevant action",
-                    "Measure the response time",
-                ],
-                "The operation meets the specified performance limit.",
-            )
-
-        elif category == "usability":
-            add_case(
-                category,
-                f"Helpful feedback: {criterion}",
-                [
-                    "Perform the relevant action",
-                    "Review the displayed message",
-                ],
-                "The message is clear and helpful to the user.",
-            )
-
-        else:
-            add_case(
-                category,
-                f"Verify requirement: {criterion}",
-                [
-                    "Open the relevant page",
-                    f"Perform the action described by: {criterion}",
-                ],
-                f"The application satisfies the requirement: {criterion}",
-            )
-
-    return cases
 
 
 # ---------------- PAGE HEADER ----------------
@@ -287,7 +180,7 @@ classified_criteria = []
 
 for index, criterion in enumerate(criteria, start=1):
     criterion = str(criterion)
-    category = predict_demo_category(criterion)
+    category, confidence = predict_category(criterion)
 
     classified_criteria.append({
         "criterion": criterion,
@@ -299,6 +192,7 @@ for index, criterion in enumerate(criteria, start=1):
 
         left.write(f"**{index}.** {criterion}")
         right.markdown(f"**Category:** `{category}`")
+        right.caption(f"Confidence: {confidence:.0%}")
 
 
 # ---------------- GENERATE TEST CASES ----------------
@@ -307,17 +201,25 @@ st.divider()
 st.subheader("Generate Test Cases")
 
 st.caption(
-    "This frontend demonstration uses sample category predictions "
-    "and illustrative test cases. It does not call the real classifier "
-    "or generator."
+    "Uses the trained requirement classifier and test case generator."
 )
 
 if st.button("🧪 Generate Test Cases", type="primary"):
-    st.session_state.generated_cases = generate_demo_cases(
-        story,
-        classified_criteria,
-    )
-    st.session_state.generated_story_key = story["key"]
+    try:
+        categories = [
+            predict_category(str(criterion))
+            for criterion in criteria
+        ]
+
+        st.session_state.generated_cases = generate_test_cases(
+            story,
+            categories,
+        )
+
+        st.session_state.generated_story_key = story["key"]
+
+    except Exception as error:
+        st.error(f"Could not generate test cases: {error}")
 
 
 # ---------------- DISPLAY RESULTS ----------------
@@ -326,7 +228,7 @@ generated_cases = st.session_state.generated_cases
 
 if generated_cases:
     st.success(
-        f"{len(generated_cases)} sample test case(s) generated."
+       f"{len(generated_cases)} test case(s) generated successfully."
     )
 
     for case in generated_cases:
@@ -355,16 +257,17 @@ if generated_cases:
     )
 
 else:
-    st.info(
-        "No test cases generated yet. "
-        "Click Generate Test Cases to preview the workflow."
-    )
+   st.info(
+    "No test cases generated yet. "
+    "Click Generate Test Cases to create them."
+)
 
-# ---------------- DEMO STATUS ----------------
 
-with st.expander("About this demonstration"):
+# ---------------- ABOUT ----------------
+
+with st.expander("About Jira QA Agents"):
     st.write("Stories are loaded from local JSON files when available.")
-    st.write("Otherwise, the app uses built-in sample stories.")
-    st.write("Category predictions use simple demonstration rules.")
-    st.write("Test cases are illustrative and are not generated by an AI model.")
+    st.write("If no local stories are found, built-in sample stories are used.")
+    st.write("Acceptance criteria are classified using the trained requirement classifier.")
+    st.write("Test cases are generated using the project's test case generator.")
 
