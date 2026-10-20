@@ -133,8 +133,9 @@ def fetch_stories(project_key):
 
     if project_response.status_code == 404:
         raise RuntimeError(
-            f"Project '{project_key}' was not found or is not accessible."
-        )
+        f"Jira returned 404 for project '{project_key}'. "
+        f"Response: {project_response.text[:500]}"
+    )
 
     project_response.raise_for_status()
 
