@@ -1,0 +1,1104 @@
+text,category
+The login page remembers the user's preferences,usability
+A quantity of 100 is rejected while 99 is accepted,boundary
+The profile page can be used with the keyboard only,usability
+Users without permission cannot access the admin dashboard,security
+The username must be at least 255 characters long,boundary
+The help page shows a clear progress indicator,usability
+Links and buttons on the profile page are easy to tell apart,usability
+A volume of 101 is rejected while 100 is accepted,boundary
+The system rejects an invalid credit card number,validation
+The form cannot be submitted until the start date is valid,validation
+A duplicate national ID number is not accepted,validation
+Submitting the form with a blank search keyword is not allowed,validation
+An error message is shown when the date of birth has an incorrect format,validation
+A rating of 6 is rejected while 5 is accepted,boundary
+The order page works well on small screens,usability
+The manager can sort the list by date,functional
+The settings page uses a consistent layout with the rest of the application,usability
+The display name cannot be longer than 12 characters,boundary
+The age must be between 18 and 65,boundary
+A registered user can log out from any page,functional
+The username must be at least 3 characters long,boundary
+Users can add up to 2 items to the cart,boundary
+The description cannot be longer than 15 characters,boundary
+The profile page has clear labels on every button,usability
+Employee salaries are never included in error messages,security
+Only a manager can edit system settings,security
+The username cannot be longer than 500 characters,boundary
+A confirmation dialog appears before deleting data,usability
+The product page does not freeze while data is loading,performance
+Every change to personal messages is recorded with the user and time,security
+Only a manager can view the audit log,security
+An admin can invite a colleague by email,functional
+The dashboard remains responsive on a slow mobile connection,performance
+A comment with exactly 4 characters is accepted,boundary
+The API responds within 750 milliseconds for 95 percent of requests,performance
+The product page remains responsive on a slow mobile connection,performance
+The username must be at least 500 characters long,boundary
+Only the account owner can change another user's role,security
+Cross-site request forgery tokens are required for form submissions,security
+A new visitor can cancel an order before it ships,functional
+Every change to login credentials is recorded with the user and time,security
+The system does not accept an country field that contains only spaces,validation
+An admin can unsubscribe from email notifications,functional
+The login page stays fast when 1000 users are online,performance
+"After the user clicks Save, a confirmation email is sent to the user",functional
+The comment must be at least 50 characters long,boundary
+The message must be at least 15 characters long,boundary
+A comment with exactly 8 characters is accepted,boundary
+An error message is shown when the start date has an incorrect format,validation
+The system rejects an invalid password confirmation,validation
+Importing a CSV file takes less than 1 seconds,performance
+Every change to customer records is recorded with the user and time,security
+Personal messages are encrypted when stored,security
+The postal code must not contain special characters,validation
+The text on the settings page is easy to read,usability
+The form cannot be submitted until the first name is valid,validation
+An error message is shown when the coupon code has an incorrect format,validation
+The system does not accept an end date that contains only spaces,validation
+The form cannot be submitted until the end date is valid,validation
+A user can upload a maximum of 2 files at one time,boundary
+The display name must be at least 15 characters long,boundary
+The search keyword is required and cannot be left empty,validation
+The checkout page uses a consistent layout with the rest of the application,usability
+The registration form uses a consistent layout with the rest of the application,usability
+The profile page stays fast when 1000 users are online,performance
+The profile page does not freeze while data is loading,performance
+The first name is required and cannot be left empty,validation
+Users can easily go back from the profile page without losing their data,usability
+Entering letters in the username shows a validation error,validation
+"After the order is placed, the user is taken to the next page",functional
+Only an admin can delete a user account,security
+An error message is shown when the street address has an incorrect format,validation
+The search results page renders its main content quickly,performance
+The password must be at least 30 characters long,boundary
+The credit card number is required and cannot be left empty,validation
+The settings page is easy to use on a mobile phone,usability
+A logged-in user can cancel an order before it ships,functional
+Customer records are never included in error messages,security
+Only an authenticated user can access the admin dashboard,security
+The customer can reset their password using a link sent by email,functional
+"After the user clicks Save, a confirmation message is displayed",functional
+Sending a message takes less than 3 seconds,performance
+The settings page loads in under 2 seconds,performance
+The title cannot be longer than 12 characters,boundary
+The booking form works well on small screens,usability
+The website URL is checked for the correct format before the data is saved,validation
+The search page gives immediate feedback after every action,usability
+Error messages are written in plain language,usability
+The customer can print the booking confirmation,functional
+Users can complete the main task on the registration form in only a few steps,usability
+The user can download an invoice as a PDF,functional
+Only an authenticated user can export all orders,security
+The phone number is checked for the correct format before the data is saved,validation
+The project name must be at least 50 characters long,boundary
+The system supports 2000 concurrent users without slowing down,performance
+The settings page remains responsive on a slow mobile connection,performance
+An error message is shown when the quantity field has an incorrect format,validation
+The form cannot be submitted until the password confirmation is valid,validation
+The registration form shows a clear progress indicator,usability
+The message cannot be longer than 20 characters,boundary
+The API responds within 1000 milliseconds for 95 percent of requests,performance
+The profile page works well on small screens,usability
+A registered user can update their profile picture,functional
+The customer can delete their own comment,functional
+An admin can upload a document to a ticket,functional
+"Uploaded files must be PDF, PNG or JPG only",validation
+Submitting the form with a blank postal code is not allowed,validation
+The date of birth is checked for the correct format before the data is saved,validation
+An error message is shown when the password confirmation has an incorrect format,validation
+The system supports 500 concurrent users without slowing down,performance
+Uploaded documents are never included in error messages,security
+The manager can pay with a saved card,functional
+The customer can edit a submitted form,functional
+Users must be 13 years or older to register,boundary
+The application handles 100 requests per second,performance
+The password cannot be longer than 10 characters,boundary
+All images have descriptive alt text,usability
+A duplicate username is not accepted,validation
+A duplicate password confirmation is not accepted,validation
+The report page renders its main content quickly,performance
+The system removes the item from the list after it is deleted,functional
+A page size of 101 is rejected while 100 is accepted,boundary
+Submitting the form with a blank phone number is not allowed,validation
+The system rejects an invalid country field,validation
+The manager can search products by name,functional
+A password with exactly 4 characters is accepted,boundary
+The coupon code is checked for the correct format before the data is saved,validation
+The display name must be at least 3 characters long,boundary
+Sending a message takes less than 5 seconds,performance
+"After the item is deleted, a confirmation message is displayed",functional
+Entering letters in the phone number shows a validation error,validation
+The profile page renders its main content quickly,performance
+The customer can subscribe to the newsletter,functional
+Files with unsupported types are rejected,validation
+Access to the admin dashboard is recorded in the audit log,security
+The order history page stays fast when 1000 users are online,performance
+The user can assign a ticket to a team member,functional
+The start date is required and cannot be left empty,validation
+The system is protected against SQL injection,security
+Links and buttons on the booking form are easy to tell apart,usability
+The title cannot be longer than 6 characters,boundary
+The settings page remembers the user's preferences,usability
+Important actions are easy to find from the main menu,usability
+Personal messages are encrypted when sent over the network,security
+Users can add up to 10 items to the cart,boundary
+The maximum file upload size is 10 MB,boundary
+A comment cannot be submitted when it is empty,validation
+The profile page looks tidy and is not cluttered,usability
+The checkout page renders its main content quickly,performance
+The project name must be at least 6 characters long,boundary
+The project name cannot be longer than 5 characters,boundary
+The maximum file upload size is 20 MB,boundary
+A new visitor can upload a document to a ticket,functional
+The manager can download an invoice as a PDF,functional
+The phone number must not contain special characters,validation
+Entering letters in the country field shows a validation error,validation
+Employee salaries are encrypted when stored,security
+The system rejects an invalid IBAN,validation
+The dashboard has clear labels on every button,usability
+The search page looks tidy and is not cluttered,usability
+The password must be at least 50 characters long,boundary
+The message cannot be longer than 8 characters,boundary
+The number of seats must be between 1 and 6,boundary
+The system sends a reset link to the registered email address,functional
+Only a finance user can view the audit log,security
+Generating an invoice takes less than 3 seconds,performance
+The title cannot be longer than 10 characters,boundary
+The checkout page stays fast when 1000 users are online,performance
+The text on the profile page is easy to read,usability
+Only the account owner can view private projects,security
+A logged-in user can mark a task as completed,functional
+Saving a record takes less than 1 seconds,performance
+The description cannot be longer than 3 characters,boundary
+The password cannot be longer than 20 characters,boundary
+The product page loads in under 5 seconds,performance
+Login credentials are never included in error messages,security
+The search page is accessible to screen reader users,usability
+The title must be at least 12 characters long,boundary
+The shopper can assign a ticket to a team member,functional
+"After the account is created, a confirmation message is displayed",functional
+The help page works well on small screens,usability
+A registered user can mark a task as completed,functional
+The comment cannot be longer than 6 characters,boundary
+Error messages do not reveal whether an email address is registered,security
+Failed login attempts are logged,security
+Only a team lead can access the admin dashboard,security
+Users can easily go back from the settings page without losing their data,usability
+The system shows the latest five notifications on the home page,functional
+The maximum file upload size is 1 MB,boundary
+Only an authenticated user can edit system settings,security
+The invoice number is checked for the correct format before the data is saved,validation
+The home page stays fast when 1000 users are online,performance
+The display name must be at least 500 characters long,boundary
+A registered user can save a draft and continue editing later,functional
+An admin can edit a submitted form,functional
+Customer records can only be read by authorized users,security
+The profile page uses a consistent layout with the rest of the application,usability
+The search results page loads in under 2 seconds,performance
+The order page uses a consistent layout with the rest of the application,usability
+The message must be at least 3 characters long,boundary
+Links and buttons on the order page are easy to tell apart,usability
+The invoice number is required and cannot be left empty,validation
+Users can find the help section within two clicks,usability
+Personal information is masked in exported reports,security
+"After the ticket is closed, a confirmation message is displayed",functional
+Role-based access control limits what each user can do,security
+A user can upload a maximum of 25 files at one time,boundary
+Unauthenticated users are redirected to the login page when opening the system settings,security
+The project name must be at least 100 characters long,boundary
+Entering letters in the search keyword shows a validation error,validation
+An admin can reopen a closed ticket,functional
+The account is locked after 10 failed login attempts,boundary
+The email address must not contain special characters,validation
+Help text is shown next to complicated fields on the login page,usability
+An admin can add a comment to a story,functional
+A age of 66 is rejected while 65 is accepted,boundary
+Only an admin can edit system settings,security
+The display name cannot be longer than 5 characters,boundary
+The display name must be at least 12 characters long,boundary
+The system supports 750 concurrent users without slowing down,performance
+The API responds within 100 milliseconds for 95 percent of requests,performance
+The project name must be at least 500 characters long,boundary
+A new visitor can change the display language,functional
+All traffic between the browser and the server uses HTTPS,security
+Help text is shown next to complicated fields on the booking form,usability
+A registered user can pay with a saved card,functional
+The registration form looks tidy and is not cluttered,usability
+The title must be at least 100 characters long,boundary
+The password must be at least 255 characters long,boundary
+The text on the checkout page is easy to read,usability
+Only a manager can access the admin dashboard,security
+The first name must not contain special characters,validation
+Links and buttons on the settings page are easy to tell apart,usability
+Unauthenticated users are redirected to the login page when opening private documents,security
+The quantity field is checked for the correct format before the data is saved,validation
+Links and buttons on the dashboard are easy to tell apart,usability
+The password confirmation is checked for the correct format before the data is saved,validation
+A registered user can share a document with another user,functional
+The login page can be used with the keyboard only,usability
+Users cannot view orders that belong to other users by changing the URL,security
+A logged-in user can download an invoice as a PDF,functional
+A registered user can reopen a closed ticket,functional
+The report page does not freeze while data is loading,performance
+A new visitor can export the report to CSV,functional
+The system supports 10000 concurrent users without slowing down,performance
+Loading the activity feed takes less than 3 seconds,performance
+A duplicate credit card number is not accepted,validation
+The report page loads in under 3 seconds,performance
+The project name cannot be longer than 8 characters,boundary
+Required fields are clearly marked,usability
+The profile page is easy to use on a mobile phone,usability
+The system rejects an invalid quantity field,validation
+A registered user can remove an item from the shopping cart,functional
+"After the payment is completed, a confirmation message is displayed",functional
+Submitting the form with a blank street address is not allowed,validation
+The display name must be at least 255 characters long,boundary
+The shopper can save a draft and continue editing later,functional
+The system rejects an invalid website URL,validation
+A user can upload a maximum of 1 files at one time,boundary
+The dashboard can be used with the keyboard only,usability
+The project name cannot be longer than 100 characters,boundary
+Entering letters in the date of birth shows a validation error,validation
+The payment is processed within 2 seconds,performance
+The checkout page loads in under 5 seconds,performance
+The manager can delete their own comment,functional
+A new visitor can add an item to the shopping cart,functional
+The user can filter the results by price,functional
+"After the user submits the form, a confirmation message is displayed",functional
+The system does not accept an email address that contains only spaces,validation
+The username cannot be longer than 5 characters,boundary
+The search keyword is checked for the correct format before the data is saved,validation
+The profile page remains responsive on a slow mobile connection,performance
+An admin can filter the results by price,functional
+The first name is checked for the correct format before the data is saved,validation
+Only an authenticated user can see the billing page,security
+The form cannot be submitted until the national ID number is valid,validation
+The description cannot be longer than 12 characters,boundary
+File uploads of 10 MB complete within 30 seconds,performance
+Generating an invoice takes less than 1 seconds,performance
+The system does not accept an last name that contains only spaces,validation
+The password cannot be longer than 15 characters,boundary
+The booking form remembers the user's preferences,usability
+The account is locked after 5 failed login attempts,boundary
+The booking form gives immediate feedback after every action,usability
+The customer can track the delivery status of an order,functional
+The street address is required and cannot be left empty,validation
+The payment is processed within 5 seconds,performance
+Links and buttons on the login page are easy to tell apart,usability
+The login page has clear labels on every button,usability
+Logging in takes less than 1 seconds,performance
+The user can schedule a meeting from the calendar,functional
+Users without permission cannot access private documents,security
+The last name is checked for the correct format before the data is saved,validation
+A logged-in user can bookmark an article,functional
+The comment cannot be longer than 8 characters,boundary
+A new visitor can print the booking confirmation,functional
+Search results appear within 300 milliseconds of typing,performance
+Running a search takes less than 5 seconds,performance
+Access to the user management page is recorded in the audit log,security
+A project name with exactly 8 characters is accepted,boundary
+The system does not accept an start date that contains only spaces,validation
+A new user can complete the registration form without any training,usability
+The system does not accept an search keyword that contains only spaces,validation
+The minimum order amount is 1 dollars,boundary
+A logged-in user can track the delivery status of an order,functional
+The shopper can filter the results by price,functional
+Login is protected against brute-force attacks,security
+The customer can rate a purchased product,functional
+An admin can delete their own comment,functional
+The customer can view the order history,functional
+The title must be at least 8 characters long,boundary
+Only an admin can change another user's role,security
+A new user can complete the checkout page without any training,usability
+The profile page loads in under 2 seconds,performance
+Search results appear within 500 milliseconds of typing,performance
+A quantity of 11 is rejected while 10 is accepted,boundary
+The form cannot be submitted until the coupon code is valid,validation
+The checkout page remembers the user's preferences,usability
+API keys are never exposed in the browser,security
+Users without permission cannot access the user management page,security
+"After the item is deleted, a confirmation email is sent to the user",functional
+Two-factor authentication is available for all accounts,security
+The system supports 100 concurrent users without slowing down,performance
+Caching is used to reduce page load time,performance
+Running a search takes less than 1 seconds,performance
+The discount must be between 0 and 50,boundary
+The help page looks tidy and is not cluttered,usability
+The date of birth must not contain special characters,validation
+A duplicate first name is not accepted,validation
+The manager can reset their password using a link sent by email,functional
+A logged-in user can save a draft and continue editing later,functional
+The description must be at least 100 characters long,boundary
+Users can easily go back from the registration form without losing their data,usability
+Only a manager can download customer data,security
+The order history page loads in under 1 seconds,performance
+An admin can view the order history,functional
+The dashboard works well on small screens,usability
+The customer can follow another user,functional
+The login page renders its main content quickly,performance
+The user can upload a document to a ticket,functional
+The settings page looks tidy and is not cluttered,usability
+The user can request a password reset at most 5 times per day,boundary
+Links and buttons on the checkout page are easy to tell apart,usability
+The search results page stays fast when 1000 users are online,performance
+The email address is checked for the correct format before the data is saved,validation
+The settings page is accessible to screen reader users,usability
+The product page stays fast when 1000 users are online,performance
+Health records are encrypted when sent over the network,security
+Logging in takes less than 5 seconds,performance
+Password reset links can be used only once,security
+Users without permission cannot access the system settings,security
+A registered user can create a new project,functional
+Importing a CSV file takes less than 3 seconds,performance
+The national ID number must not contain special characters,validation
+The password must include at least one number and one letter,validation
+An error message is shown when the IBAN has an incorrect format,validation
+Batch jobs finish within the nightly maintenance window,performance
+The volume must be between 0 and 100,boundary
+Submitting the form with a blank start date is not allowed,validation
+The settings page loads in under 3 seconds,performance
+A new user can complete the search page without any training,usability
+The login page loads in under 3 seconds,performance
+Submitting the form with a blank email address is not allowed,validation
+The search page shows a clear progress indicator,usability
+The username must not contain special characters,validation
+A duplicate search keyword is not accepted,validation
+The country field is checked for the correct format before the data is saved,validation
+Users can add up to 5 items to the cart,boundary
+Account settings can only be read by authorized users,security
+The display name cannot be longer than 10 characters,boundary
+The search page has clear labels on every button,usability
+Users can add up to 50 items to the cart,boundary
+An admin can add an item to the shopping cart,functional
+The form cannot be submitted until the username is valid,validation
+Health records can only be read by authorized users,security
+The user can mark a task as completed,functional
+Users can complete the main task on the dashboard in only a few steps,usability
+Entering letters in the credit card number shows a validation error,validation
+Only the account owner can download customer data,security
+The username cannot be longer than 8 characters,boundary
+The system rejects an invalid phone number,validation
+A new visitor can reset their password using a link sent by email,functional
+Help text is shown next to complicated fields on the checkout page,usability
+The message cannot be longer than 30 characters,boundary
+The title cannot be longer than 255 characters,boundary
+The manager can remove an item from the shopping cart,functional
+The IBAN is checked for the correct format before the data is saved,validation
+The layout adapts to tablets and desktops,usability
+"After the user clicks Save, the dashboard shows the updated information",functional
+The description cannot be longer than 10 characters,boundary
+The profile page remembers the user's preferences,usability
+The comment must be at least 20 characters long,boundary
+Submitting the form with a blank national ID number is not allowed,validation
+A password with exactly 32 characters is accepted,boundary
+The order page gives immediate feedback after every action,usability
+A new visitor can rate a purchased product,functional
+A duplicate quantity field is not accepted,validation
+The product page loads in under 2 seconds,performance
+"After the user submits the form, the record is saved in the system",functional
+The country field is required and cannot be left empty,validation
+The home page remains responsive on a slow mobile connection,performance
+Only a team lead can view the audit log,security
+The user can add a comment to a story,functional
+Only a team lead can view private projects,security
+The display name cannot be longer than 500 characters,boundary
+A user can upload a maximum of 5 files at one time,boundary
+The display name must be at least 30 characters long,boundary
+The settings page gives immediate feedback after every action,usability
+Uploaded documents are encrypted when stored,security
+The title must be at least 30 characters long,boundary
+Each team can have no more than 25 members,boundary
+The user can bookmark an article,functional
+"After the ticket is closed, the user is taken to the next page",functional
+A duplicate website URL is not accepted,validation
+The date of birth is required and cannot be left empty,validation
+Success messages are clear and easy to notice,usability
+A duplicate coupon code is not accepted,validation
+An admin can cancel an order before it ships,functional
+Each team can have no more than 50 members,boundary
+A room count of 5 is rejected while 4 is accepted,boundary
+An admin can mark a task as completed,functional
+The project name must be at least 10 characters long,boundary
+The system blocks requests from unauthorized IP addresses,security
+An admin can follow another user,functional
+Required fields are marked and checked before submission,validation
+Access to another user's profile data is recorded in the audit log,security
+The form cannot be submitted until the last name is valid,validation
+Entering letters in the first name shows a validation error,validation
+Personal messages can only be read by authorized users,security
+The comment cannot be longer than 500 characters,boundary
+A new visitor can switch between accounts,functional
+Response time does not degrade as the number of records grows,performance
+The login page remains responsive on a slow mobile connection,performance
+Sensitive data does not appear in log files,security
+The profile page loads in under 1 seconds,performance
+The shopper can add an item to the shopping cart,functional
+Help text is shown next to complicated fields on the search page,usability
+Health records are never included in error messages,security
+The form cannot be submitted until the country field is valid,validation
+The manager can save a draft and continue editing later,functional
+Personal data is deleted when the user requests account removal,security
+Only a team lead can export all orders,security
+The email address must contain an @ symbol,validation
+The message cannot be longer than 50 characters,boundary
+The dashboard gives immediate feedback after every action,usability
+A logged-in user can assign a ticket to a team member,functional
+An error message is shown when the national ID number has an incorrect format,validation
+The registration form has clear labels on every button,usability
+The home page loads in under 5 seconds,performance
+Submitting the form with a blank end date is not allowed,validation
+The description cannot be longer than 5 characters,boundary
+Only the account owner can view the audit log,security
+Only the account owner can edit system settings,security
+Passwords are stored as salted hashes,security
+A registered user can rate a purchased product,functional
+File uploads of 10 MB complete within 5 seconds,performance
+The quantity field must not contain special characters,validation
+The system updates the stock count after each purchase,functional
+The shopper can schedule a meeting from the calendar,functional
+The checkout page can be used with the keyboard only,usability
+A registered user can track the delivery status of an order,functional
+The username is checked for the correct format before the data is saved,validation
+The project name cannot be longer than 10 characters,boundary
+A volume below 0 is not allowed,boundary
+The system does not accept an phone number that contains only spaces,validation
+A new user can complete the order page without any training,usability
+The dashboard uses a consistent layout with the rest of the application,usability
+An admin can track the delivery status of an order,functional
+The booking form is easy to use on a mobile phone,usability
+Users can complete the main task on the checkout page in only a few steps,usability
+Account settings are never included in error messages,security
+The dashboard renders its main content quickly,performance
+The system supports 1000 concurrent users without slowing down,performance
+The password cannot be longer than 500 characters,boundary
+The system rejects an invalid postal code,validation
+Only an admin can view the audit log,security
+The search page can be used with the keyboard only,usability
+Generating an invoice takes less than 5 seconds,performance
+The shopper can switch between accounts,functional
+Health records are encrypted when stored,security
+Submitting the form with a blank credit card number is not allowed,validation
+Every change to employee salaries is recorded with the user and time,security
+The national ID number is required and cannot be left empty,validation
+Decimal values are not allowed in the number of guests,validation
+A logged-in user can remove an item from the shopping cart,functional
+The quantity must be between 1 and 10,boundary
+The project name cannot be longer than 6 characters,boundary
+The product page renders its main content quickly,performance
+The checkout page does not freeze while data is loading,performance
+Saving a record takes less than 5 seconds,performance
+The password cannot be longer than 30 characters,boundary
+Only a team lead can delete a user account,security
+The text on the order page is easy to read,usability
+A new user can complete the help page without any training,usability
+The system rejects an invalid invoice number,validation
+The end date is checked for the correct format before the data is saved,validation
+The API responds within 3000 milliseconds for 95 percent of requests,performance
+An error message is shown when the search keyword has an incorrect format,validation
+The checkout page loads in under 1 seconds,performance
+The order history page does not freeze while data is loading,performance
+Entering letters in the postal code shows a validation error,validation
+The manager can filter the results by price,functional
+The application handles 500 requests per second,performance
+The shopper can mark a task as completed,functional
+Unauthenticated users are redirected to the login page when opening other users' orders,security
+The user is logged out when the session token expires,security
+The password must be at least 12 characters long,boundary
+Database queries finish quickly even with one million records,performance
+The display name must be at least 10 characters long,boundary
+Only a finance user can approve refunds,security
+Exporting a report takes less than 10 seconds,performance
+The text on the login page is easy to read,usability
+Tooltips explain icons that are not self-explanatory,usability
+An admin can apply a discount code at checkout,functional
+The system rejects an invalid first name,validation
+The booking form avoids technical jargon,usability
+The text on the registration form is easy to read,usability
+The description must be at least 30 characters long,boundary
+The settings page shows a clear progress indicator,usability
+Syncing data to the server takes less than 1 seconds,performance
+Credit card numbers are encrypted at rest,security
+The payment is processed within 30 seconds,performance
+The message must be at least 5 characters long,boundary
+The checkout page avoids technical jargon,usability
+Only an admin can export all orders,security
+Sending a message takes less than 1 seconds,performance
+Users without permission cannot access other users' orders,security
+The form cannot be submitted until the credit card number is valid,validation
+The title must be at least 10 characters long,boundary
+Users without permission cannot access confidential reports,security
+The selected delivery date must be a working day,validation
+The user can edit a submitted form,functional
+The comment must be at least 8 characters long,boundary
+The checkout page is easy to use on a mobile phone,usability
+The display name cannot be longer than 8 characters,boundary
+A user can upload a maximum of 20 files at one time,boundary
+The profile page loads in under 3 seconds,performance
+Only the account owner can see the billing page,security
+The report page remains responsive on a slow mobile connection,performance
+The color contrast meets accessibility guidelines,usability
+Unauthenticated users are redirected to the login page when opening the admin dashboard,security
+The maximum file upload size is 50 MB,boundary
+A duplicate start date is not accepted,validation
+The postal code is checked for the correct format before the data is saved,validation
+A logged-in user can search products by name,functional
+The description cannot be longer than 100 characters,boundary
+Pages remain fast when many users are online at the same time,performance
+A new visitor can save a draft and continue editing later,functional
+The dashboard looks tidy and is not cluttered,usability
+The title cannot be longer than 50 characters,boundary
+The checkout page looks tidy and is not cluttered,usability
+The text on the search page is easy to read,usability
+The home page loads in under 2 seconds,performance
+Help text is shown next to complicated fields on the registration form,usability
+A logged-in user can schedule a meeting from the calendar,functional
+An admin can reset their password using a link sent by email,functional
+The street address must not contain special characters,validation
+"After the order is placed, a confirmation message is displayed",functional
+The user always knows which step of the process they are on,usability
+A new user can complete the booking form without any training,usability
+The comment cannot be longer than 15 characters,boundary
+A duplicate last name is not accepted,validation
+The title must be at least 50 characters long,boundary
+The system rejects an invalid end date,validation
+Only a finance user can access the admin dashboard,security
+Help text is shown next to complicated fields on the dashboard,usability
+Only a manager can see the billing page,security
+A comment with exactly 16 characters is accepted,boundary
+The system does not accept an coupon code that contains only spaces,validation
+A registered user can bookmark an article,functional
+Unauthenticated users are redirected to the login page when opening the billing information of another account,security
+Users must re-enter their password before changing their email address,security
+Unauthenticated users are redirected to the login page when opening confidential reports,security
+The comment cannot be longer than 10 characters,boundary
+The description cannot be longer than 20 characters,boundary
+Help text is shown next to complicated fields on the profile page,usability
+The registration form remembers the user's preferences,usability
+Syncing data to the server takes less than 5 seconds,performance
+An admin can add a product to the wishlist,functional
+A registered user can download an invoice as a PDF,functional
+The title must be at least 15 characters long,boundary
+The form cannot be submitted until the search keyword is valid,validation
+The URL must start with http or https,validation
+An admin can remove an item from the shopping cart,functional
+Buttons are large enough to tap on a touch screen,usability
+Submitting the form with a blank last name is not allowed,validation
+A logged-in user can add a product to the wishlist,functional
+Entering letters in the IBAN shows a validation error,validation
+The comment cannot be longer than 100 characters,boundary
+The comment must be at least 30 characters long,boundary
+The customer can switch between accounts,functional
+The project name cannot be longer than 500 characters,boundary
+A username with exactly 8 characters is accepted,boundary
+The registration form can be used with the keyboard only,usability
+A new visitor can subscribe to the newsletter,functional
+The project name cannot be longer than 12 characters,boundary
+The registration form is accessible to screen reader users,usability
+Only the account owner can access the admin dashboard,security
+The customer can create a new project,functional
+Users can complete the main task on the booking form in only a few steps,usability
+The login page avoids technical jargon,usability
+Admin actions require a second confirmation step,security
+The form cannot be submitted until the postal code is valid,validation
+Help text is shown next to complicated fields on the order page,usability
+Customer records are encrypted when stored,security
+The design looks the same in all supported browsers,usability
+The description must be at least 10 characters long,boundary
+The order history page loads in under 5 seconds,performance
+The profile page is accessible to screen reader users,usability
+The product page loads in under 3 seconds,performance
+The checkout page works well on small screens,usability
+The shopper can create a new project,functional
+The manager can schedule a meeting from the calendar,functional
+Help text is shown next to complicated fields on the help page,usability
+Payment details are encrypted when stored,security
+A logged-in user can create a new project,functional
+The message cannot be longer than 100 characters,boundary
+The system is available 99.9 percent of the time,performance
+The manager can add an item to the shopping cart,functional
+Unauthenticated users are redirected to the login page when opening the user management page,security
+The system supports 3000 concurrent users without slowing down,performance
+An error message is shown when the website URL has an incorrect format,validation
+"After the item is deleted, the dashboard shows the updated information",functional
+The start date is checked for the correct format before the data is saved,validation
+The customer can schedule a meeting from the calendar,functional
+A duplicate end date is not accepted,validation
+The system rejects an invalid date of birth,validation
+Passwords are never shown in plain text,security
+Uploaded files are scanned for malware,security
+The application handles 5000 requests per second,performance
+An unknown username is rejected with an error message,validation
+The API responds within 250 milliseconds for 95 percent of requests,performance
+The help page is accessible to screen reader users,usability
+A registered user can print the booking confirmation,functional
+The search page remembers the user's preferences,usability
+The shopper can sort the list by date,functional
+The login page loads in under 1 seconds,performance
+File uploads of 10 MB complete within 10 seconds,performance
+Entering letters in the website URL shows a validation error,validation
+Users can easily go back from the booking form without losing their data,usability
+The system recovers from a traffic spike within one minute,performance
+The settings page works well on small screens,usability
+The username must be at least 50 characters long,boundary
+The dashboard loads in under 3 seconds,performance
+The search page uses a consistent layout with the rest of the application,usability
+The shopper can unsubscribe from email notifications,functional
+"After the item is deleted, the change appears in the activity history",functional
+Access to private documents is recorded in the audit log,security
+The customer can pay with a saved card,functional
+The comment cannot be longer than 3 characters,boundary
+Images are compressed so that pages load quickly on slow connections,performance
+The booking form is accessible to screen reader users,usability
+The system rejects an invalid search keyword,validation
+A quantity below 1 is not allowed,boundary
+The help page is easy to use on a mobile phone,usability
+The last name must not contain special characters,validation
+A registered user can export the report to CSV,functional
+The search results page loads in under 5 seconds,performance
+The system does not accept an website URL that contains only spaces,validation
+The registration form is easy to use on a mobile phone,usability
+A loan term in years of 31 is rejected while 30 is accepted,boundary
+The message must be at least 255 characters long,boundary
+The username cannot be longer than 255 characters,boundary
+The system rejects an invalid email address,validation
+The system does not accept an quantity field that contains only spaces,validation
+Syncing data to the server takes less than 3 seconds,performance
+The comment must be at least 255 characters long,boundary
+Users must be 18 years or older to register,boundary
+An error message is shown when the first name has an incorrect format,validation
+Users can undo their last action,usability
+The profile page loads in under 5 seconds,performance
+Only the account owner can delete a user account,security
+An error message is shown when the last name has an incorrect format,validation
+The quantity must be between 1 and 99,boundary
+The password confirmation is required and cannot be left empty,validation
+The settings page stays fast when 1000 users are online,performance
+A duplicate date of birth is not accepted,validation
+API requests require a valid authentication token,security
+The password must be at least 3 characters long,boundary
+The system does not accept an username that contains only spaces,validation
+The invoice number must not contain special characters,validation
+The username must be at least 6 characters long,boundary
+The manager can bookmark an article,functional
+The order page shows a clear progress indicator,usability
+The shopper can log out from any page,functional
+The API responds within 2000 milliseconds for 95 percent of requests,performance
+The checkout page shows a clear progress indicator,usability
+A new visitor can pay with a saved card,functional
+A logged-in user can switch between accounts,functional
+The dashboard loads in under 5 seconds,performance
+Only the account owner can export all orders,security
+Users can complete the main task on the settings page in only a few steps,usability
+The order history page loads in under 3 seconds,performance
+Submitting the form with a blank IBAN is not allowed,validation
+The settings page avoids technical jargon,usability
+The report page loads in under 1 seconds,performance
+Every change to account settings is recorded with the user and time,security
+The minimum order amount is 99 dollars,boundary
+The product page loads in under 1 seconds,performance
+The customer can upload a document to a ticket,functional
+The system does not accept an password confirmation that contains only spaces,validation
+Logging in takes less than 3 seconds,performance
+"After the file is uploaded, a confirmation message is displayed",functional
+Users can easily go back from the login page without losing their data,usability
+A duplicate IBAN is not accepted,validation
+A new visitor can bookmark an article,functional
+The checkout page has clear labels on every button,usability
+Users can easily go back from the dashboard without losing their data,usability
+The website URL must not contain special characters,validation
+A logged-in user can follow another user,functional
+The help page has clear labels on every button,usability
+The country field must not contain special characters,validation
+The system updates the cart total when the quantity changes,functional
+Importing a CSV file takes less than 5 seconds,performance
+The description must be at least 6 characters long,boundary
+A loan term in years below 1 is not allowed,boundary
+Access to other users' orders is recorded in the audit log,security
+The API responds within 300 milliseconds for 95 percent of requests,performance
+The shopper can view the order history,functional
+The order page has clear labels on every button,usability
+Only a team lead can change another user's role,security
+The dashboard shows a clear progress indicator,usability
+Only a manager can change another user's role,security
+A registered user can unsubscribe from email notifications,functional
+The form cannot be submitted until the IBAN is valid,validation
+Saving a record takes less than 3 seconds,performance
+The booking form uses a consistent layout with the rest of the application,usability
+Links and buttons on the registration form are easy to tell apart,usability
+Only a finance user can see the billing page,security
+The booking form can be used with the keyboard only,usability
+User input is sanitized to prevent cross-site scripting,security
+Login credentials are encrypted when stored,security
+The search page avoids technical jargon,usability
+The description must be at least 15 characters long,boundary
+Access tokens cannot be reused after logout,security
+Only a manager can approve refunds,security
+The settings page has clear labels on every button,usability
+The settings page does not freeze while data is loading,performance
+The username is required and cannot be left empty,validation
+"After the user clicks Save, the user is taken to the next page",functional
+The system complies with data protection regulations,security
+A number of seats of 7 is rejected while 6 is accepted,boundary
+A new user can complete the profile page without any training,usability
+The search results page remains responsive on a slow mobile connection,performance
+A registered user can follow another user,functional
+Users can easily go back from the checkout page without losing their data,usability
+Access to confidential reports is recorded in the audit log,security
+Only an admin can approve refunds,security
+The login page gives immediate feedback after every action,usability
+Font size can be increased without breaking the layout,usability
+The form cannot be submitted until the invoice number is valid,validation
+The settings page can be used with the keyboard only,usability
+The message must be at least 500 characters long,boundary
+A logged-in user can delete their own comment,functional
+Entering letters in the invoice number shows a validation error,validation
+A new visitor can add a product to the wishlist,functional
+The system rejects an invalid street address,validation
+Only a team lead can download customer data,security
+The dashboard remembers the user's preferences,usability
+Users can complete the main task on the help page in only a few steps,usability
+Payment details are encrypted when sent over the network,security
+Payment details can only be read by authorized users,security
+The password confirmation must not contain special characters,validation
+The description cannot be longer than 255 characters,boundary
+The form cannot be submitted until the phone number is valid,validation
+The credit card number is checked for the correct format before the data is saved,validation
+The end date must not contain special characters,validation
+A duplicate invoice number is not accepted,validation
+A registered user can switch between accounts,functional
+Only a finance user can change another user's role,security
+Users can add up to 1 items to the cart,boundary
+The application handles 1000 requests per second,performance
+The username cannot be longer than 3 characters,boundary
+The minimum order amount is 100 dollars,boundary
+Users can easily go back from the order page without losing their data,usability
+Submitting the form with a blank first name is not allowed,validation
+The manager can subscribe to the newsletter,functional
+A logged-in user can unsubscribe from email notifications,functional
+Session cookies are marked as secure and HttpOnly,security
+The account is locked after 3 failed login attempts,boundary
+The help page uses a consistent layout with the rest of the application,usability
+Customer records are encrypted when sent over the network,security
+Entering letters in the coupon code shows a validation error,validation
+The login page loads in under 5 seconds,performance
+A page size below 10 is not allowed,boundary
+A new user can complete the login page without any training,usability
+The order history page renders its main content quickly,performance
+The comment must be at least 500 characters long,boundary
+The description cannot be longer than 30 characters,boundary
+Only an admin can view private projects,security
+The date of birth cannot be a future date,validation
+"After the user submits the form, the dashboard shows the updated information",functional
+Only an admin can access the admin dashboard,security
+The username must be at least 5 characters long,boundary
+The password cannot be longer than 3 characters,boundary
+A new visitor can download an invoice as a PDF,functional
+The settings page loads in under 5 seconds,performance
+A rating below 1 is not allowed,boundary
+Orders above 1999 dollars require manager approval,boundary
+Each team can have no more than 10 members,boundary
+A duplicate phone number is not accepted,validation
+Search results appear within 1000 milliseconds of typing,performance
+Login credentials can only be read by authorized users,security
+Only a manager can view private projects,security
+"After the file is uploaded, the record is saved in the system",functional
+Exporting a report takes less than 30 seconds,performance
+The settings page loads in under 1 seconds,performance
+An error message is shown when the credit card number has an incorrect format,validation
+A duplicate country field is not accepted,validation
+An admin can print the booking confirmation,functional
+A registered user can filter the results by price,functional
+A password with exactly 16 characters is accepted,boundary
+The description must be at least 8 characters long,boundary
+The search results page loads in under 1 seconds,performance
+The manager can track the delivery status of an order,functional
+The password must be at least 6 characters long,boundary
+The system rejects an invalid national ID number,validation
+A registered user can add a comment to a story,functional
+Only an authenticated user can view private projects,security
+The system rejects an invalid coupon code,validation
+Exporting a report takes less than 5 seconds,performance
+An error message is shown when the country field has an incorrect format,validation
+Uploaded documents are encrypted when sent over the network,security
+The profile page gives immediate feedback after every action,usability
+The username must be at least 30 characters long,boundary
+A logged-in user can print the booking confirmation,functional
+The minimum order amount is 0 dollars,boundary
+The manager can edit a submitted form,functional
+The coupon code must not contain special characters,validation
+Only a finance user can delete a user account,security
+Entering letters in the end date shows a validation error,validation
+A new user can complete the dashboard without any training,usability
+Login credentials are encrypted when sent over the network,security
+Only a finance user can edit system settings,security
+The project name must be at least 12 characters long,boundary
+Every change to payment details is recorded with the user and time,security
+Links and buttons on the search page are easy to tell apart,usability
+The message must be at least 20 characters long,boundary
+Exporting a report takes less than 2 seconds,performance
+Orders above 1099 dollars require manager approval,boundary
+The booking form looks tidy and is not cluttered,usability
+The message cannot be longer than 10 characters,boundary
+The message cannot be longer than 5 characters,boundary
+Only an authenticated user can view the audit log,security
+The API responds within 500 milliseconds for 95 percent of requests,performance
+A logged-in user can rate a purchased product,functional
+The manager can reopen a closed ticket,functional
+Account settings are encrypted when sent over the network,security
+The search results page does not freeze while data is loading,performance
+Loading the activity feed takes less than 5 seconds,performance
+The system redirects the user to the dashboard after login,functional
+Access to the system settings is recorded in the audit log,security
+The user can follow another user,functional
+Entering letters in the password confirmation shows a validation error,validation
+The form cannot be submitted until the email address is valid,validation
+A new visitor can reopen a closed ticket,functional
+Users can complete the main task on the order page in only a few steps,usability
+The quantity field is required and cannot be left empty,validation
+The system generates an invoice for every completed order,functional
+The payment is processed within 10 seconds,performance
+Employee salaries can only be read by authorized users,security
+Large lists load without noticeable delay,performance
+Payment details are never included in error messages,security
+The text on the help page is easy to read,usability
+The IBAN must not contain special characters,validation
+Notifications are delivered within a few seconds,performance
+A registered user can reset their password using a link sent by email,functional
+The application handles 10000 requests per second,performance
+The dashboard is easy to use on a mobile phone,usability
+The login page works well on small screens,usability
+The order page avoids technical jargon,usability
+The text on the booking form is easy to read,usability
+The manager can invite a colleague by email,functional
+The user can unsubscribe from email notifications,functional
+The home page loads in under 3 seconds,performance
+The coupon code must exist and still be active,validation
+The form cannot be submitted until the website URL is valid,validation
+The help page remembers the user's preferences,usability
+The interface supports a dark mode,usability
+Submitting the form with a blank username is not allowed,validation
+A username with exactly 16 characters is accepted,boundary
+"After the account is created, the user is taken to the next page",functional
+The password cannot be longer than 100 characters,boundary
+Error messages explain how to fix the problem,usability
+The text on the dashboard is easy to read,usability
+Users can easily go back from the help page without losing their data,usability
+The system does not accept an credit card number that contains only spaces,validation
+The user can invite a colleague by email,functional
+The API responds within 200 milliseconds for 95 percent of requests,performance
+The username cannot be longer than 100 characters,boundary
+A new visitor can update their profile picture,functional
+The password confirmation must match the password,validation
+Only an admin can see the billing page,security
+The help page avoids technical jargon,usability
+The username cannot be longer than 50 characters,boundary
+The order page can be used with the keyboard only,usability
+Search results appear within 100 milliseconds of typing,performance
+The system sends a push notification when a new message arrives,functional
+Users can complete the main task on the login page in only a few steps,usability
+The customer can change the display language,functional
+The report page loads in under 5 seconds,performance
+The customer can unsubscribe from email notifications,functional
+The checkout page is accessible to screen reader users,usability
+A project name with exactly 4 characters is accepted,boundary
+Users without permission cannot access the billing information of another account,security
+Only an authenticated user can approve refunds,security
+The description cannot be longer than 500 characters,boundary
+Each team can have no more than 5 members,boundary
+The title must be at least 20 characters long,boundary
+The search box is visible on every page,usability
+Submitting the form with a blank quantity field is not allowed,validation
+The application supports multiple languages,usability
+The shopper can edit a submitted form,functional
+The comment cannot be longer than 255 characters,boundary
+A registered user can sort the list by date,functional
+The username must be at least 15 characters long,boundary
+The manager can view the order history,functional
+Memory usage stays stable during long sessions,performance
+The report page loads in under 2 seconds,performance
+Each team can have no more than 20 members,boundary
+The shopper can reopen a closed ticket,functional
+The search keyword must not contain special characters,validation
+The settings page renders its main content quickly,performance
+Only a finance user can download customer data,security
+The home page renders its main content quickly,performance
+The message cannot be longer than 3 characters,boundary
+Each team can have no more than 2 members,boundary
+The order page is easy to use on a mobile phone,usability
+The dashboard is accessible to screen reader users,usability
+The display name must be at least 100 characters long,boundary
+Submitting the form with a blank coupon code is not allowed,validation
+A new visitor can search products by name,functional
+"After the item is deleted, the record is saved in the system",functional
+The profile page avoids technical jargon,usability
+Links and buttons on the help page are easy to tell apart,usability
+The title cannot be longer than 8 characters,boundary
+The help page gives immediate feedback after every action,usability
+The profile page shows a clear progress indicator,usability
+The IBAN is required and cannot be left empty,validation
+The end date must be later than the start date,validation
+The system rejects an invalid last name,validation
+The order history page remains responsive on a slow mobile connection,performance
+"After the user clicks Save, the change appears in the activity history",functional
+The home page does not freeze while data is loading,performance
+The system does not accept an IBAN that contains only spaces,validation
+The end date is required and cannot be left empty,validation
+The system does not accept an invoice number that contains only spaces,validation
+A new visitor can mark a task as completed,functional
+The customer can search products by name,functional
+Only a team lead can approve refunds,security
+The password must be at least 500 characters long,boundary
+The system does not accept an date of birth that contains only spaces,validation
+An admin can search products by name,functional
+The national ID number is checked for the correct format before the data is saved,validation
+Users without permission cannot access another user's profile data,security
+The description must be at least 50 characters long,boundary
+The comment must be at least 100 characters long,boundary
+Personal messages are never included in error messages,security
+The order page is accessible to screen reader users,usability
+The login page is easy to use on a mobile phone,usability
+The postal code is required and cannot be left empty,validation
+A logged-in user can change the display language,functional
+A new user can complete the settings page without any training,usability
+Entering letters in the street address shows a validation error,validation
+The system logs the user out when they click Log out,functional
+The description must be at least 255 characters long,boundary
+Scrolling through long lists is smooth,performance
+The login page shows a clear progress indicator,usability
+Submitting the form with a blank password confirmation is not allowed,validation
+The password must be at least 100 characters long,boundary
+The username must be at least 8 characters long,boundary
+Only the account owner can approve refunds,security
+The password cannot be longer than 8 characters,boundary
+A age below 18 is not allowed,boundary
+Only an authenticated user can download customer data,security
+The password must be at least 20 characters long,boundary
+The credit card number must not contain special characters,validation
+The system sends a reminder email one day before the due date,functional
+Only a team lead can edit system settings,security
+The shopper can search products by name,functional
+Only a team lead can see the billing page,security
+The dashboard stays fast when 1000 users are online,performance
+The dashboard avoids technical jargon,usability
+"After the payment is completed, a confirmation email is sent to the user",functional
+The registration form avoids technical jargon,usability
+The report page stays fast when 1000 users are online,performance
+An admin can save a draft and continue editing later,functional
+Account settings are encrypted when stored,security
+The display name cannot be longer than 3 characters,boundary
+The registration form works well on small screens,usability
+The home page loads in under 1 seconds,performance
+Entering letters in the quantity field shows a validation error,validation
+Only a finance user can export all orders,security
+Negative numbers are not accepted in the quantity field,validation
+The name field must not contain numbers,validation
+The customer can cancel an order before it ships,functional
+A duplicate email address is not accepted,validation
+Users can add up to 25 items to the cart,boundary
+The page size must be between 10 and 100,boundary
+An error message is shown when the phone number has an incorrect format,validation
+The form cannot be submitted until the quantity field is valid,validation
+The title must be at least 3 characters long,boundary
+The search results page loads in under 3 seconds,performance
+The user can switch between accounts,functional
+A logged-in user can upload a document to a ticket,functional
+The checkout page gives immediate feedback after every action,usability
+Uploaded documents can only be read by authorized users,security
+The login page does not freeze while data is loading,performance
+The user can remove an item from the shopping cart,functional
+The customer can update their profile picture,functional
+Orders above 1000 dollars require manager approval,boundary
+Every change to health records is recorded with the user and time,security
+A room count below 1 is not allowed,boundary
+A logged-in user can pay with a saved card,functional
+The dashboard does not freeze while data is loading,performance
+A new visitor can schedule a meeting from the calendar,functional
+The system restores the previous version when the user clicks Undo,functional
+Expired credit cards are rejected at checkout,validation
+The system does not accept an postal code that contains only spaces,validation
+Help text is shown next to complicated fields on the settings page,usability
+The search page is easy to use on a mobile phone,usability
+The booking form shows a clear progress indicator,usability
+Only an authenticated user can delete a user account,security
+A password with exactly 8 characters is accepted,boundary
+The system does not accept an first name that contains only spaces,validation
+The manager can apply a discount code at checkout,functional
+The message must be at least 8 characters long,boundary
+A registered user can add an item to the shopping cart,functional
+The application stays responsive under heavy load,performance
+The comment must be at least 10 characters long,boundary
+The minimum order amount is 999 dollars,boundary
+Entering letters in the start date shows a validation error,validation
+Only a manager can export all orders,security
+Only an authenticated user can change another user's role,security
+The search page works well on small screens,usability
+The project name cannot be longer than 30 characters,boundary
+The login page looks tidy and is not cluttered,usability
+The email address is required and cannot be left empty,validation
+The project name must be at least 8 characters long,boundary
+Users can complete the main task on the profile page in only a few steps,usability
+The phone number is required and cannot be left empty,validation
+Every change to uploaded documents is recorded with the user and time,security
+Only an admin can download customer data,security
+The title cannot be longer than 100 characters,boundary
+A registered user can upload a document to a ticket,functional
+The system supports 250 concurrent users without slowing down,performance
+Only a manager can delete a user account,security
+The checkout page remains responsive on a slow mobile connection,performance
+The system rejects an invalid username,validation
+Only a finance user can view private projects,security
+The system stores the selected language for the next visit,functional
+Entering letters in the email address shows a validation error,validation
+The login page loads in under 2 seconds,performance
+The customer can mark a task as completed,functional
+The dashboard loads in under 2 seconds,performance
+The shopper can print the booking confirmation,functional
+An admin can export the report to CSV,functional
+A registered user can cancel an order before it ships,functional
+The manager can update their profile picture,functional
+The help page can be used with the keyboard only,usability
+A duplicate postal code is not accepted,validation
+The mobile app starts in under three seconds,performance
+A number of guests of 9 is rejected while 8 is accepted,boundary
+The order page looks tidy and is not cluttered,usability
+The order history page loads in under 2 seconds,performance
+Password reset links expire after use,security
+The shopper can add a comment to a story,functional
+Loading the activity feed takes less than 1 seconds,performance
+The dashboard loads in under 1 seconds,performance
+The navigation menu is the same on every page,usability
+Access to the billing information of another account is recorded in the audit log,security
+The checkout page loads in under 2 seconds,performance
+Users must be 65 years or older to register,boundary
+Users can complete the main task on the search page in only a few steps,usability
+The system supports 5000 concurrent users without slowing down,performance
+The message cannot be longer than 6 characters,boundary
+The coupon code is required and cannot be left empty,validation
+The postal code must match the selected country format,validation
+Search results appear within 200 milliseconds of typing,performance
+The registration form gives immediate feedback after every action,usability
+The login page is accessible to screen reader users,usability
+Data is encrypted during transfer between services,security
+The checkout page loads in under 3 seconds,performance
+Sessions expire after a period of inactivity,security
+The maximum file upload size is 5 MB,boundary
+A duplicate street address is not accepted,validation
+The shopper can cancel an order before it ships,functional
+The form cannot be submitted until the date of birth is valid,validation
+Unauthenticated users are redirected to the login page when opening another user's profile data,security
+The customer can bookmark an article,functional
+The shopper can subscribe to the newsletter,functional
+Running a search takes less than 3 seconds,performance
+The login page uses a consistent layout with the rest of the application,usability
+The form cannot be submitted until the street address is valid,validation
+The system scales automatically when traffic increases,performance
+File uploads of 10 MB complete within 2 seconds,performance
+The order page remembers the user's preferences,usability
+The customer can log out from any page,functional
+The user can view the order history,functional
+The booking form has clear labels on every button,usability
+Employee salaries are encrypted when sent over the network,security
+Users can easily go back from the search page without losing their data,usability
+A logged-in user can edit a submitted form,functional
