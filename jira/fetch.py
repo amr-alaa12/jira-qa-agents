@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+from streamlit.errors import StreamlitSecretNotFoundError
 from pathlib import Path
 
 import requests
@@ -79,11 +80,11 @@ def extract_criteria(description):
 def fetch_stories(project_key):
     
     """Fetch Jira issues and save them using the agreed JSON schema."""
-
-    # Read Streamlit Cloud Secrets, falling back to local .env
+ 
+    # Read Streamlit Cloud Secrets when available; otherwise use local .env
     try:
-        secrets = st.secrets
-    except Exception:
+        secrets = dict(st.secrets)
+    except StreamlitSecretNotFoundError:
         secrets = {}
 
     base_url = str(
