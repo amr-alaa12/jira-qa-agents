@@ -4,6 +4,7 @@
     "id": "SHOP-1-TC1",
     "title": "User receives a reset link by email",
     "type": "functional",
+    "input": "Valid data to reset the password",
     "steps": [
       "Open the reset password page",
       "Reset the password using valid data",
@@ -16,6 +17,7 @@
     "id": "SHOP-1-TC2",
     "title": "Failure path: user receives a reset link by email",
     "type": "functional",
+    "input": "Invalid or missing data to reset the password",
     "steps": [
       "Open the reset password page",
       "Reset the password using invalid or missing data",
@@ -28,6 +30,7 @@
     "id": "SHOP-1-TC3",
     "title": "New password with 7 characters is rejected",
     "type": "boundary",
+    "input": "New password: 7 characters",
     "steps": [
       "Open the reset password page",
       "Enter a new password with 7 characters",
@@ -40,6 +43,7 @@
     "id": "SHOP-1-TC4",
     "title": "New password with 8 characters is accepted",
     "type": "boundary",
+    "input": "New password: 8 characters",
     "steps": [
       "Open the reset password page",
       "Enter a new password with 8 characters",
@@ -52,6 +56,7 @@
     "id": "SHOP-1-TC5",
     "title": "New password with 9 characters is accepted",
     "type": "boundary",
+    "input": "New password: 9 characters",
     "steps": [
       "Open the reset password page",
       "Enter a new password with 9 characters",

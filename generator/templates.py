@@ -48,6 +48,7 @@ class StoryContext:
 @dataclass(frozen=True)
 class Draft:
     title: str
+    input: str               # the test data: "New password: 7 characters"
     steps: Tuple[str, ...]
     expected: str
 
@@ -63,11 +64,13 @@ def functional(ctx: StoryContext, criterion: str) -> List[Draft]:
     return [
         Draft(
             title=text.capitalize(text.strip_article(statement)),
+            input=f"Valid data to {ctx.task}",
             steps=(ctx.open_step, f"{task} using valid data", "Check the result"),
             expected=text.capitalize(statement),
         ),
         Draft(
             title=f"Failure path: {text.lower_first(text.strip_article(statement))}",
+            input=f"Invalid or missing data to {ctx.task}",
             steps=(ctx.open_step, f"{task} using invalid or missing data", "Check the result"),
             expected=("The action is not completed, a clear error message is shown, "
                       f"and this does not happen: {text.lower_first(statement)}"),
@@ -134,12 +137,14 @@ def validation(ctx: StoryContext, criterion: str) -> List[Draft]:
 
     drafts = [Draft(
         title=f"Valid {field} is accepted",
+        input=f"{text.capitalize(field)}: {valid_entry}",
         steps=(ctx.open_step, f"Enter {valid_entry} in the {field} field", "Submit the form"),
         expected=f"The {field} is accepted and the form can be submitted",
     )]
     for sample in invalid:
         drafts.append(Draft(
             title=text.capitalize(f"{field} {sample.reason} is rejected"),
+            input=_invalid_input(sample, field),
             steps=(ctx.open_step, _invalid_entry_step(sample, field, kind is None), "Submit the form"),
             expected=f"The {field} is rejected and a clear validation message is shown next to the field",
         ))
@@ -151,6 +156,14 @@ def _field_kind(phrase: str) -> Optional[_FieldKind]:
         if re.search(kind.pattern, phrase, re.IGNORECASE):
             return kind
     return None
+
+
+def _invalid_input(sample: _Sample, field: str) -> str:
+    if sample is _EMPTY:
+        return f"{text.capitalize(field)}: (empty)"
+    if sample.entry is None:
+        return f"{text.capitalize(field)}: a value {sample.reason}"
+    return f'{text.capitalize(field)}: "{sample.entry}"'
 
 
 def _invalid_entry_step(sample: _Sample, field: str, generic: bool) -> str:
@@ -188,6 +201,7 @@ def boundary(ctx: StoryContext, criterion: str) -> List[Draft]:
             quantity = limit.format(value)
             drafts.append(Draft(
                 title=_boundary_title(limit, subject, quantity, inside, condition),
+                input=_boundary_input(limit, subject, quantity),
                 steps=(ctx.open_step, _boundary_step(limit, subject, quantity, condition),
                        "Submit the form" if limit.kind == "length" else "Check the result"),
                 expected=_boundary_expected(limit, subject, quantity, inside, condition, criterion),
@@ -216,6 +230,12 @@ def _boundary_title(limit: Limit, subject: str, quantity: str, inside: bool, con
     if limit.kind == "time":
         return text.capitalize(f"{subject} taking {quantity} {'passes' if inside else 'fails'} the limit")
     return text.capitalize(f"{subject} with {quantity} is {'accepted' if inside else 'rejected'}")
+
+
+def _boundary_input(limit: Limit, subject: str, quantity: str) -> str:
+    if limit.kind in ("attempts", "repeat", "items"):
+        return text.capitalize(quantity)
+    return text.capitalize(f"{subject}: {quantity}")
 
 
 def _boundary_step(limit: Limit, subject: str, quantity: str, condition: bool) -> str:
@@ -252,11 +272,13 @@ def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
     return [
         Draft(
             title=text.capitalize(f"{subject} exactly at the limit is accepted"),
+            input=text.capitalize(f"{subject}: exactly at the limit"),
             steps=(ctx.open_step, f"Use the largest (or smallest) {subject} the rule allows", "Check the result"),
             expected=f"The {subject} is accepted because it respects the rule: {statement}",
         ),
         Draft(
             title=text.capitalize(f"{subject} just past the limit is rejected"),
+            input=text.capitalize(f"{subject}: one step past the limit"),
             steps=(ctx.open_step, f"Use a {subject} one step past what the rule allows", "Check the result"),
             expected=f"The {subject} is rejected and an error message explains the rule: {statement}",
         ),
@@ -285,11 +307,13 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
     drafts = [
         Draft(
             title=text.capitalize(f"{roles.allowed} can {action}"),
+            input=f"User: {roles.allowed}",
             steps=(_login_step(roles.allowed), ctx.open_step, f"Try to {action}"),
             expected=f"Access is granted and the user can {action}",
         ),
         Draft(
             title=text.capitalize(f"{roles.blocked} cannot {action}"),
+            input=f"User: {roles.blocked}",
             steps=(_login_step(roles.blocked), ctx.open_step, f"Try to {action}"),
             expected=("Access is denied (error page, HTTP 403 or redirect to login), the action is not "
                       "performed and no protected data is shown"),
@@ -298,6 +322,7 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
     if _PROTECTION_RE.search(criterion):
         drafts.append(Draft(
             title="Sensitive data is never stored or sent in plain text",
+            input=f"User: {roles.allowed}, with sensitive data such as a password",
             steps=(_login_step(roles.allowed), f"{text.capitalize(action)}",
                    "Inspect the network traffic and the stored data"),
             expected="Traffic uses HTTPS and the sensitive data is stored only in encrypted or hashed form",
@@ -349,12 +374,14 @@ def performance(ctx: StoryContext, criterion: str) -> List[Draft]:
     return [
         Draft(
             title=text.capitalize(f"{subject} meets the target with a single user"),
+            input="1 user, 10 requests in a row",
             steps=(ctx.open_step, "Measure the response time with 1 user, 10 times in a row",
                    "Record the average and the slowest time"),
             expected=single_expected,
         ),
         Draft(
             title=text.capitalize(f"{subject} meets the target under load ({load})"),
+            input=f"{load} for 5 minutes",
             steps=(f"Prepare a load test (for example with JMeter or Locust) for the {ctx.feature_name} page",
                    f"Simulate {load} for 5 minutes",
                    "Record the 95th-percentile response time and the error rate"),
@@ -373,6 +400,7 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     statement = text.lower_first(text.sentence(criterion))
     drafts = [Draft(
         title=f"First-time user can {ctx.task} without help",
+        input="A first-time user, no instructions",
         steps=(f"Give a first-time user this task: {ctx.task}", "Give no instructions or help",
                "Observe where the user hesitates or makes mistakes"),
         expected=f"The user completes the task without help, and this holds: {statement}",
@@ -380,6 +408,7 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     if _MOBILE_RE.search(criterion):
         drafts.append(Draft(
             title="Page works on a phone-sized screen",
+            input="Screen width: 360 px",
             steps=(f"{ctx.open_step} on a screen 360 px wide", f"Try to {ctx.task}",
                    "Check the text, buttons and layout"),
             expected="All content fits the screen without sideways scrolling and every button is easy to tap",
@@ -387,12 +416,14 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     elif _MESSAGE_RE.search(criterion):
         drafts.append(Draft(
             title="Messages are clear and helpful",
+            input="One successful and one failed attempt",
             steps=(ctx.open_step, "Cause one successful and one failed attempt", "Read the messages shown"),
             expected="Each message says in plain words what happened and what to do next",
         ))
     else:
         drafts.append(Draft(
             title="Task can be completed with the keyboard only",
+            input="Keyboard only: Tab, Shift+Tab, Enter and Space",
             steps=(ctx.open_step, f"Try to {ctx.task} using only Tab, Shift+Tab, Enter and Space",
                    "Watch the focus indicator"),
             expected="Every control can be reached and used with the keyboard and the focused element is always visible",

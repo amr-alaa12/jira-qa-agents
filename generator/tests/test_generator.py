@@ -59,7 +59,7 @@ STORIES = {
 def assert_agreed_format(test_case):
     """The format agreed at kickoff (examples/test_cases.json)."""
     assert tuple(test_case) == TEST_CASE_FIELDS
-    for field in ("story_key", "id", "title", "type", "expected"):
+    for field in ("story_key", "id", "title", "type", "input", "expected"):
         assert isinstance(test_case[field], str) and test_case[field].strip(), field
     assert test_case["type"] in CATEGORIES
     assert isinstance(test_case["steps"], list) and test_case["steps"]
@@ -71,7 +71,7 @@ def test_output_matches_the_shared_example_format():
     story = json.loads((EXAMPLES / "stories.json").read_text(encoding="utf-8"))[0]
     test_cases = generate_test_cases(story, ["functional", "boundary"])
     for test_case in test_cases:
-        assert set(test_case) == set(example)
+        assert set(example) <= set(test_case)  # plus "input", agreed on 21/10
         assert_agreed_format(test_case)
 
 
@@ -126,6 +126,17 @@ def test_boundary_uses_the_number_in_the_criterion():
         "Submit the form",
     ]
     assert "rejected" in boundary[0]["expected"] and "at least 8 characters" in boundary[0]["expected"]
+    assert [tc["input"] for tc in boundary] == [
+        "New password: 7 characters",
+        "New password: 8 characters",
+        "New password: 9 characters",
+    ]
+
+
+def test_boundary_input_for_attempts_is_the_count():
+    story = dict(LOGIN, acceptance_criteria=["The account is locked after 3 failed login attempts"])
+    inputs = [tc["input"] for tc in generate_test_cases(story, ["boundary"])]
+    assert inputs == ["2 failed login attempts", "3 failed login attempts", "4 failed login attempts"]
 
 
 def test_boundary_range_tests_both_ends():
@@ -152,12 +163,18 @@ def test_validation_has_one_valid_and_two_invalid_inputs():
         "Email address without an @ sign is rejected",
         "Email address without a domain is rejected",
     ]
+    assert [tc["input"] for tc in test_cases] == [
+        'Email address: "user@example.com"',
+        'Email address: "userexample.com"',
+        'Email address: "user@"',
+    ]
 
 
 def test_required_field_is_tested_empty():
     story = dict(CHECKOUT, acceptance_criteria=["The card number is required"])
-    steps = [tc["steps"][1] for tc in generate_test_cases(story, ["validation"])]
-    assert "Leave the card number field empty" in steps
+    test_cases = generate_test_cases(story, ["validation"])
+    assert "Leave the card number field empty" in [tc["steps"][1] for tc in test_cases]
+    assert "Card number: (empty)" in [tc["input"] for tc in test_cases]
 
 
 def test_security_has_an_allowed_and_a_blocked_user():
@@ -168,6 +185,7 @@ def test_security_has_an_allowed_and_a_blocked_user():
         "Regular user (not an administrator) cannot delete products",
     ]
     assert "denied" in test_cases[1]["expected"]
+    assert test_cases[0]["input"] == "User: administrator"
 
 
 def test_security_for_logged_in_users_uses_an_anonymous_visitor():
