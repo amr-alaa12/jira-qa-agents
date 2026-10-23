@@ -1,32 +1,80 @@
-
 import json
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 import streamlit as st
 
-st.set_page_config(
-    page_title="Jira QA Agents",
-    page_icon="🧪",
-    layout="wide",
-)
+from model.train_and_predict import predict_category
+from generator.core import generate_test_cases
+from jira.fetch import fetch_stories
 
-CATEGORIES = [
-    "functional",
-    "validation",
-    "boundary",
-    "security",
-    "performance",
-    "usability",
-]
+st.set_page_config(page_title="Jira QA Agents", page_icon="🧪", layout="wide")
+
+st.markdown(
+    """
+    <style>
+    :root {
+        --ink: #202c3b;
+        --muted: #5e6c7d;
+        --line: #e3e8ef;
+        --surface: #ffffff;
+    --accent: #2459a6;
+    --accent-hover: #194785;
+    }
+    .stApp { background: #f4f6f9; color: var(--ink); }
+    [data-testid="stHeader"] { background: rgba(244, 246, 249, 0.96); }
+    .block-container { max-width: 1080px; padding-top: 2.6rem; padding-bottom: 4rem; }
+    h1, h2, h3, h4 { color: var(--ink); letter-spacing: -0.025em; }
+    h1 { font-size: 2.35rem; font-weight: 700; }
+    p, label, .stCaption { color: var(--muted); line-height: 1.6; }
+    [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stExpander"] {
+        background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(32, 44, 59, 0.035);
+    }
+    [data-testid="stExpander"] summary { color: var(--ink); font-weight: 600; }
+    [data-testid="stBaseButton-primary"], .stButton > button[kind="primary"] {
+        background: var(--accent) !important; border: 1px solid var(--accent) !important;
+        color: #fff !important; border-radius: 10px !important; min-height: 2.8rem;
+        font-weight: 600 !important; box-shadow: 0 2px 5px rgba(41, 75, 112, 0.16);
+    }
+    [data-testid="stBaseButton-primary"] *, .stButton > button[kind="primary"] * {
+        color: #ffffff !important;
+    }
+    [data-testid="stBaseButton-primary"]:hover, .stButton > button[kind="primary"]:hover {
+        background: var(--accent-hover) !important; border-color: var(--accent-hover) !important;
+    }
+    [data-testid="stBaseButton-secondary"], .stDownloadButton button {
+        background: #fff !important; border: 1px solid #cbd5e1 !important;
+        color: #34465b !important; border-radius: 10px !important; min-height: 2.6rem;
+    }
+    [data-testid="stBaseButton-secondary"]:hover, .stDownloadButton button:hover {
+        background: #eef2f7 !important; border-color: #9eacbd !important;
+    }
+    [data-testid="stSelectbox"] > div > div {
+        background: #fff; border-radius: 10px; border-color: #d7dee8;
+    }
+    [data-testid="stSelectbox"] [data-baseweb="select"] {
+        background: #ffffff !important;
+        color: var(--ink) !important;
+    }
+    [data-testid="stSelectbox"] [data-baseweb="select"] * {
+        color: var(--ink) !important;
+    }
+    [data-testid="stAlert"] { border-radius: 12px; }
+    hr { border-color: var(--line); }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 SAMPLE_STORIES = [
     {
         "key": "SHOP-1",
         "title": "Reset password",
-        "description": (
-            "As a user, I want to reset my password "
-            "so that I can log in again."
-        ),
+        "description": "As a user, I want to reset my password so that I can log in again.",
         "acceptance_criteria": [
             "The user receives a reset link by email",
             "The new password must be at least 8 characters",
@@ -35,10 +83,7 @@ SAMPLE_STORIES = [
     {
         "key": "SHOP-2",
         "title": "User login",
-        "description": (
-            "As a registered user, I want to log in "
-            "securely to access my account."
-        ),
+        "description": "As a registered user, I want to log in securely to access my account.",
         "acceptance_criteria": [
             "Users must enter a valid email address",
             "Incorrect passwords must be rejected",
@@ -48,9 +93,7 @@ SAMPLE_STORIES = [
     {
         "key": "SHOP-3",
         "title": "Product search",
-        "description": (
-            "As a customer, I want to search for products by name."
-        ),
+        "description": "As a customer, I want to search for products by name.",
         "acceptance_criteria": [
             "Search results must match the entered product name",
             "An empty search must show a helpful message",
@@ -59,312 +102,131 @@ SAMPLE_STORIES = [
 ]
 
 
-def predict_demo_category(criterion: str) -> str:
-    """Simple mock predictions for the frontend demonstration."""
-    text = criterion.lower()
-
-    rules = [
-        (["8 characters", "at least", "maximum", "minimum", "limit"],
-         "boundary"),
-        (["valid email", "empty", "invalid", "required", "rejected"],
-         "validation"),
-        (["securely", "authenticated", "unauthorized", "owner"],
-         "security"),
-        (["under", "seconds", "response time", "fast"],
-         "performance"),
-        (["helpful", "easy", "clear", "understand"],
-         "usability"),
-    ]
-
-    for keywords, category in rules:
-        if any(word in text for word in keywords):
-            return category
-
-    return "functional"
-
-
 def load_json_stories(path: Path):
     """Load stories from a local JSON file."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-
         if isinstance(data, list):
-            return [
-                item for item in data
-                if isinstance(item, dict) and item.get("key")
-            ]
+            return [item for item in data if isinstance(item, dict) and item.get("key")]
     except (OSError, json.JSONDecodeError):
         pass
-
     return []
 
 
 def get_stories():
-    """Prefer available local stories; otherwise use sample data."""
+    """Fetch Jira stories, with local and sample fallbacks."""
     root = Path(__file__).resolve().parent.parent
+    try:
+        stories = fetch_stories("KAN")
+        if stories:
+            return stories, "Connected to Jira project KAN"
+    except Exception as error:
+        st.warning(f"Could not fetch Jira stories: {error}")
 
-    candidates = [
-        root / "examples" / "stories.json",
-        root / "data" / "stories.json",
-        root / "stories.json",
-    ]
-
-    for candidate in candidates:
+    for candidate in (root / "stories.json", root / "examples" / "stories.json", root / "data" / "stories.json"):
         stories = load_json_stories(candidate)
-
         if stories:
             return stories, f"Loaded from {candidate.name}"
-
     return SAMPLE_STORIES, "Using built-in sample stories"
 
 
-def generate_demo_cases(story, classified_criteria):
-    """Generate illustrative test cases for the demo."""
-    cases = []
-
-    def add_case(category, title, steps, expected):
-        cases.append({
-            "story_key": story["key"],
-            "id": f'{story["key"]}-TC{len(cases) + 1}',
-            "title": title,
-            "type": category,
-            "steps": steps,
-            "expected": expected,
-        })
-
-    for item in classified_criteria:
-        criterion = item["criterion"]
-        category = item["category"]
-
-        if category == "boundary":
-            add_case(
-                category,
-                f"Value below the minimum: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter a value below the required minimum",
-                    "Submit the form",
-                ],
-                "The application rejects the value and displays an error.",
-            )
-            add_case(
-                category,
-                f"Value at the minimum: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter a value at the required minimum",
-                    "Submit the form",
-                ],
-                "The application accepts the value if other rules are satisfied.",
-            )
-
-        elif category == "validation":
-            add_case(
-                category,
-                f"Invalid input is rejected: {criterion}",
-                [
-                    "Open the relevant page",
-                    "Enter invalid or missing data",
-                    "Submit the form",
-                ],
-                f"The application handles invalid input for: {criterion}",
-            )
-
-        elif category == "security":
-            add_case(
-                category,
-                f"Access control is enforced: {criterion}",
-                [
-                    "Attempt the action without valid authorization",
-                    "Review the result",
-                ],
-                "The application prevents unauthorized access.",
-            )
-
-        elif category == "performance":
-            add_case(
-                category,
-                f"Performance requirement: {criterion}",
-                [
-                    "Perform the relevant action",
-                    "Measure the response time",
-                ],
-                "The operation meets the specified performance limit.",
-            )
-
-        elif category == "usability":
-            add_case(
-                category,
-                f"Helpful feedback: {criterion}",
-                [
-                    "Perform the relevant action",
-                    "Review the displayed message",
-                ],
-                "The message is clear and helpful to the user.",
-            )
-
-        else:
-            add_case(
-                category,
-                f"Verify requirement: {criterion}",
-                [
-                    "Open the relevant page",
-                    f"Perform the action described by: {criterion}",
-                ],
-                f"The application satisfies the requirement: {criterion}",
-            )
-
-    return cases
-
-
-# ---------------- PAGE HEADER ----------------
-
-st.title("🧪 Jira QA Agents")
+st.title("Jira QA Agents")
 st.caption(
-    "Turn user stories and acceptance criteria "
-    "into categorized test cases."
+    "Choose a Jira story, review its acceptance criteria, "
+    "then generate test cases with clear inputs and expected outputs."
 )
-
 stories, source_label = get_stories()
-st.caption(f"Story source: {source_label}")
-
-
-# ---------------- STORY SELECTION ----------------
+st.caption(f"Stories: {len(stories)} | Source: {source_label}")
 
 story_labels = {
-    f'{s["key"]} — {s.get("title", "Untitled story")}': s
-    for s in stories
+    f'{item["key"]} - {item.get("title", "Untitled story")}': item
+    for item in stories
 }
-
 if not story_labels:
     st.warning("No stories are available.")
     st.stop()
 
-selected_label = st.selectbox(
-    "Select a user story",
-    list(story_labels.keys()),
-)
-
+st.markdown("### 1. Choose a story")
+selected_label = st.selectbox("User story", list(story_labels.keys()))
 story = story_labels[selected_label]
-
 criteria = story.get("acceptance_criteria", [])
 if not isinstance(criteria, list):
     criteria = []
 
-
-# ---------------- DASHBOARD STATISTICS ----------------
-
 if "generated_cases" not in st.session_state:
     st.session_state.generated_cases = []
-
 if "generated_story_key" not in st.session_state:
     st.session_state.generated_story_key = None
-
 if st.session_state.generated_story_key != story["key"]:
     st.session_state.generated_cases = []
     st.session_state.generated_story_key = story["key"]
 
-col1, col2, col3 = st.columns(3)
-
-col1.metric("Stories Available", len(stories))
-col2.metric("Acceptance Criteria", len(criteria))
-col3.metric(
-    "Generated Test Cases",
-    len(st.session_state.generated_cases),
-)
-
-
-# ---------------- STORY DETAILS ----------------
-
 st.divider()
-
+st.markdown("### 2. Review the story")
 st.subheader(f'{story["key"]}: {story.get("title", "Untitled story")}')
-st.write(story.get("description", "No description provided."))
-
-st.markdown("### Acceptance Criteria and Predicted Categories")
-
-classified_criteria = []
+st.write(story.get("description") or "No description provided.")
+st.markdown("#### Acceptance criteria")
+st.caption("The predicted category helps determine which test cases are created.")
 
 for index, criterion in enumerate(criteria, start=1):
     criterion = str(criterion)
-    category = predict_demo_category(criterion)
-
-    classified_criteria.append({
-        "criterion": criterion,
-        "category": category,
-    })
-
+    category, confidence = predict_category(criterion)
     with st.container(border=True):
         left, right = st.columns([5, 2])
-
         left.write(f"**{index}.** {criterion}")
-        right.markdown(f"**Category:** `{category}`")
-
-
-# ---------------- GENERATE TEST CASES ----------------
+        right.markdown(f"**Predicted category:** `{category}`")
+        right.caption(f"Confidence: {confidence:.0%}")
 
 st.divider()
-st.subheader("Generate Test Cases")
-
-st.caption(
-    "This frontend demonstration uses sample category predictions "
-    "and illustrative test cases. It does not call the real classifier "
-    "or generator."
-)
-
-if st.button("🧪 Generate Test Cases", type="primary"):
-    st.session_state.generated_cases = generate_demo_cases(
-        story,
-        classified_criteria,
-    )
-    st.session_state.generated_story_key = story["key"]
-
-
-# ---------------- DISPLAY RESULTS ----------------
+st.markdown("### 3. Generate test cases")
+st.caption("Create test cases from this story's acceptance criteria.")
+if st.button("Generate test cases", type="primary", use_container_width=True):
+    try:
+        with st.spinner("Generating test cases..."):
+            categories = [predict_category(str(criterion)) for criterion in criteria]
+            st.session_state.generated_cases = generate_test_cases(story, categories)
+            st.session_state.generated_story_key = story["key"]
+    except Exception as error:
+        st.error(f"Could not generate test cases: {error}")
 
 generated_cases = st.session_state.generated_cases
-
 if generated_cases:
-    st.success(
-        f"{len(generated_cases)} sample test case(s) generated."
-    )
-
+    st.divider()
+    st.markdown("### Your test cases")
+    st.success(f"{len(generated_cases)} test case(s) ready for {story['key']}.")
+    st.caption("Open a case to review its input, steps, and expected output.")
     for case in generated_cases:
         with st.expander(
-            f'{case["id"]} — {case["title"]}',
-            expanded=True,
+            f'{case.get("id", "Test case")} - {case.get("title", "Untitled test case")}',
+            expanded=False,
         ):
-            st.markdown(f'**Category:** `{case["type"]}`')
-            st.markdown("**Test Steps**")
-
-            for step_index, step in enumerate(case["steps"], start=1):
-                st.write(f"{step_index}. {step}")
-
-            st.markdown("**Expected Result**")
-            st.write(case["expected"])
+            st.caption(f'Category: {case.get("type", "Not specified")}')
+            input_col, expected_col = st.columns(2)
+            with input_col:
+                st.markdown("**Input**")
+                st.write(case.get("input") or "Not provided")
+            with expected_col:
+                st.markdown("**Expected output**")
+                st.write(case.get("expected") or "Not provided")
+            st.markdown("**Steps**")
+            steps = case.get("steps") or []
+            if steps:
+                for step_index, step in enumerate(steps, start=1):
+                    st.write(f"{step_index}. {step}")
+            else:
+                st.caption("No steps provided.")
 
     st.download_button(
-        "Download Test Cases as JSON",
-        data=json.dumps(
-            generated_cases,
-            indent=2,
-            ensure_ascii=False,
-        ),
+        "Download test cases as JSON",
+        data=json.dumps(generated_cases, indent=2, ensure_ascii=False),
         file_name=f'{story["key"]}_test_cases.json',
         mime="application/json",
     )
-
 else:
-    st.info(
-        "No test cases generated yet. "
-        "Click Generate Test Cases to preview the workflow."
-    )
+    st.info("No test cases yet. Select a story, then choose **Generate test cases**.")
 
-# ---------------- DEMO STATUS ----------------
-
-with st.expander("About this demonstration"):
+with st.expander("About Jira QA Agents"):
     st.write("Stories are loaded from local JSON files when available.")
-    st.write("Otherwise, the app uses built-in sample stories.")
-    st.write("Category predictions use simple demonstration rules.")
-    st.write("Test cases are illustrative and are not generated by an AI model.")
-
+    st.write("If no local stories are found, built-in sample stories are used.")
+    st.write("Acceptance criteria are classified using the trained requirement classifier.")
+    st.write("Test cases are generated using the project's test case generator.")
