@@ -1,18 +1,18 @@
 # Test Case Generator (Member 4)
 
-Takes a user story, lets the AI model (the requirement classifier, `model/model.pkl`) pick the category of each acceptance criterion, and writes test cases in the agreed format (`examples/test_cases.json`). Since the 21/10 meeting every test case also has an `input` field, so each result states its **input** and its **expected output**.
+Takes a user story, lets the AI model (the requirement classifier, `model/model.pkl`) pick the category of each acceptance criterion, and writes test cases in the agreed format (`examples/test_cases.json`). Since the 21/10 meeting every test case also has an `input` field, so each result states its **input** and its **expected output**. Inputs are concrete values a tester can type (`Email address: "registered.user@example.com"`), not descriptions such as "valid data".
 
 **Input → output:** `stories.json` → AI model categories → `test_cases.json`
 
 ```json
 {
   "story_key": "SHOP-1",
-  "id": "SHOP-1-TC3",
+  "id": "SHOP-1-TC4",
   "title": "New password with 7 characters is rejected",
   "type": "boundary",
-  "input": "New password: 7 characters",
-  "steps": ["Open the reset password page", "Enter a new password with 7 characters", "Submit the form"],
-  "expected": "The new password is rejected and an error message explains the limit (at least 8 characters)"
+  "input": "New password: \"Passw0r\" (7 characters)",
+  "steps": ["Open the reset password page", "Enter \"Passw0r\" (7 characters) in the new password field", "Submit the form"],
+  "expected": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
 }
 ```
 
@@ -31,7 +31,7 @@ The script prints the category the model chose for every criterion with its conf
 ```text
 SHOP-1: The user receives a reset link by email -> functional (0.69)
 SHOP-1: The new password must be at least 8 characters -> boundary (0.87)
-Wrote 5 test cases for 1 story to generator/test_cases.json
+Wrote 6 test cases for 1 story to generator/test_cases.json
 ```
 
 Options:
@@ -76,10 +76,10 @@ Every acceptance criterion produces at least 2 test cases.
 
 | Category | Test cases |
 |---|---|
-| `functional` | the normal path with valid data, and one failure path with invalid or missing data |
+| `functional` | three cases with concrete values: the normal path (e.g. email `"registered.user@example.com"`), a wrong value (`"userexample.com"`) and an empty value. The field (email, phone, password, ...) is found in the criterion or the story; when none is found the input names which fields are filled and how. |
 | `validation` | one valid input and two invalid inputs. Sample values depend on the field: email, phone, date, URL, card, postal code, password, number or name. A required field is also tested empty. |
-| `boundary` | just below, at and just above every number found with `re`. "at least 8 characters" → 7 (rejected), 8 and 9 (accepted). Ranges ("between 3 and 20") test both ends. Money uses cent steps ($49.99 / $50 / $50.01). Rules such as "locked after 3 attempts" are tested as "applies / does not apply yet". |
-| `security` | an allowed user and a blocked user: admin vs regular user, owner vs other user, a named group, or logged-in user vs anonymous visitor. A criterion about encryption or hashing gets a third, data-protection case. |
+| `boundary` | just below, at and just above every number found with `re`. "at least 8 characters" → 7 (rejected), 8 and 9 (accepted), each with a literal value to type (`"Passw0r"` for 7 characters). Ranges ("between 3 and 20") test both ends. Money uses cent steps ($49.99 / $50 / $50.01). Rules such as "locked after 3 attempts" are tested as "applies / does not apply yet". |
+| `security` | an allowed user and a blocked user, each with an example account (e.g. `admin@example.com`): admin vs regular user, owner vs other user, a named group, or logged-in user vs anonymous visitor. A criterion about encryption or hashing gets a third, data-protection case. |
 | `performance` | one measurement with a single user and one load test (100 concurrent users by default, or the number in the criterion). Both use the time limit from the criterion, e.g. "under 2 seconds". |
 | `usability` | a first-time user completes the task without help, plus one check: a phone-sized screen, clear messages, or keyboard-only use (depending on the criterion) |
 

@@ -2,66 +2,79 @@
   {
     "story_key": "SHOP-1",
     "id": "SHOP-1-TC1",
-    "title": "User receives a reset link by email",
+    "title": "Registered email address: user receives a reset link by email",
     "type": "functional",
-    "input": "Valid data to reset the password",
+    "input": "Email address: \"registered.user@example.com\"",
     "steps": [
       "Open the reset password page",
-      "Reset the password using valid data",
-      "Check the result"
+      "Enter the registered email address \"registered.user@example.com\"",
+      "Submit the form"
     ],
-    "expected": "The user receives a reset link by email"
+    "expected": "A confirmation message is shown and the user receives a reset link by email"
   },
   {
     "story_key": "SHOP-1",
     "id": "SHOP-1-TC2",
-    "title": "Failure path: user receives a reset link by email",
+    "title": "Email address without an @ sign is rejected",
     "type": "functional",
-    "input": "Invalid or missing data to reset the password",
+    "input": "Email address: \"userexample.com\"",
     "steps": [
       "Open the reset password page",
-      "Reset the password using invalid or missing data",
-      "Check the result"
+      "Enter \"userexample.com\" in the email address field",
+      "Submit the form"
     ],
-    "expected": "The action is not completed, a clear error message is shown, and this does not happen: the user receives a reset link by email"
+    "expected": "The email address is rejected, a validation error is shown next to the field, and this does not happen: the user receives a reset link by email"
   },
   {
     "story_key": "SHOP-1",
     "id": "SHOP-1-TC3",
-    "title": "New password with 7 characters is rejected",
-    "type": "boundary",
-    "input": "New password: 7 characters",
+    "title": "Empty email address is rejected",
+    "type": "functional",
+    "input": "Email address: \"\" (empty)",
     "steps": [
       "Open the reset password page",
-      "Enter a new password with 7 characters",
+      "Leave the email address field empty",
       "Submit the form"
     ],
-    "expected": "The new password is rejected and an error message explains the limit (at least 8 characters)"
+    "expected": "The form is not submitted, a required-field message is shown for the email address, and this does not happen: the user receives a reset link by email"
   },
   {
     "story_key": "SHOP-1",
     "id": "SHOP-1-TC4",
-    "title": "New password with 8 characters is accepted",
+    "title": "New password with 7 characters is rejected",
     "type": "boundary",
-    "input": "New password: 8 characters",
+    "input": "New password: \"Passw0r\" (7 characters)",
     "steps": [
       "Open the reset password page",
-      "Enter a new password with 8 characters",
+      "Enter \"Passw0r\" (7 characters) in the new password field",
       "Submit the form"
     ],
-    "expected": "The new password is accepted because 8 characters is within the limit (at least 8 characters)"
+    "expected": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
   },
   {
     "story_key": "SHOP-1",
     "id": "SHOP-1-TC5",
-    "title": "New password with 9 characters is accepted",
+    "title": "New password with 8 characters is accepted",
     "type": "boundary",
-    "input": "New password: 9 characters",
+    "input": "New password: \"Passw0rd\" (8 characters)",
     "steps": [
       "Open the reset password page",
-      "Enter a new password with 9 characters",
+      "Enter \"Passw0rd\" (8 characters) in the new password field",
       "Submit the form"
     ],
-    "expected": "The new password is accepted because 9 characters is within the limit (at least 8 characters)"
+    "expected": "The new password is accepted because 8 characters is within the limit (at least 8 characters), the form is submitted and a success message is shown"
+  },
+  {
+    "story_key": "SHOP-1",
+    "id": "SHOP-1-TC6",
+    "title": "New password with 9 characters is accepted",
+    "type": "boundary",
+    "input": "New password: \"Passw0rd!\" (9 characters)",
+    "steps": [
+      "Open the reset password page",
+      "Enter \"Passw0rd!\" (9 characters) in the new password field",
+      "Submit the form"
+    ],
+    "expected": "The new password is accepted because 9 characters is within the limit (at least 8 characters), the form is submitted and a success message is shown"
   }
 ]
