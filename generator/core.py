@@ -7,11 +7,13 @@ from typing import Any, Dict, Iterable, List, Mapping, Sequence
 from .templates import TEMPLATES, StoryContext
 
 CATEGORIES = ("functional", "validation", "boundary", "security", "performance", "usability")
-TEST_CASE_FIELDS = ("story_key", "id", "title", "type", "steps", "expected")
+TEST_CASE_FIELDS = ("story_key", "id", "title", "type", "input", "steps", "expected")
 
 
 def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> List[Dict[str, Any]]:
     """Return the test cases for one story, in the agreed test case format.
+
+    Each test case states its ``input`` (the test data) and its ``expected`` output.
 
     ``categories`` holds one category per acceptance criterion, in the same
     order. Each item is a category name ("boundary") or the
@@ -36,6 +38,7 @@ def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> 
                 "id": f"{context.key}-TC{len(test_cases) + 1}",
                 "title": draft.title,
                 "type": category,
+                "input": draft.input,
                 "steps": list(draft.steps),
                 "expected": draft.expected,
             })

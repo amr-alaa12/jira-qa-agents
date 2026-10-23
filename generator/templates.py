@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from . import text
@@ -48,31 +49,12 @@ class StoryContext:
 @dataclass(frozen=True)
 class Draft:
     title: str
+    input: str               # the test data: "New password: 7 characters"
     steps: Tuple[str, ...]
     expected: str
 
 
 Template = Callable[[StoryContext, str], List[Draft]]
-
-
-# --- functional: the normal path and one failure ---------------------------------
-
-def functional(ctx: StoryContext, criterion: str) -> List[Draft]:
-    statement = text.sentence(criterion)
-    task = text.capitalize(ctx.task)
-    return [
-        Draft(
-            title=text.capitalize(text.strip_article(statement)),
-            steps=(ctx.open_step, f"{task} using valid data", "Check the result"),
-            expected=text.capitalize(statement),
-        ),
-        Draft(
-            title=f"Failure path: {text.lower_first(text.strip_article(statement))}",
-            steps=(ctx.open_step, f"{task} using invalid or missing data", "Check the result"),
-            expected=("The action is not completed, a clear error message is shown, "
-                      f"and this does not happen: {text.lower_first(statement)}"),
-        ),
-    ]
 
 
 # --- validation: one valid input and two invalid inputs ---------------------------
@@ -89,12 +71,14 @@ class _FieldKind:
     label: str
     valid: str
     invalid: Tuple[_Sample, _Sample]
+    existing: Optional[str] = None   # a value the system already knows, for the normal path
 
 
 # Checked in order, so "phone number" matches phone before number.
 _FIELD_KINDS = (
     _FieldKind(r"e-?mail", "email address", "user@example.com",
-               (_Sample("userexample.com", "without an @ sign"), _Sample("user@", "without a domain"))),
+               (_Sample("userexample.com", "without an @ sign"), _Sample("user@", "without a domain")),
+               existing="registered.user@example.com"),
     _FieldKind(r"phone|mobile\s+number", "phone number", "+14155550123",
                (_Sample("12ab34", "containing letters"), _Sample("123", "with too few digits"))),
     _FieldKind(r"\bdate\b|birthday|date\s+of\s+birth", "date", "2026-10-20",
@@ -138,12 +122,14 @@ def validation(ctx: StoryContext, criterion: str) -> List[Draft]:
 
     drafts = [Draft(
         title=f"Valid {field} is accepted",
+        input=f"{text.capitalize(field)}: {valid_entry}",
         steps=(ctx.open_step, f"Enter {valid_entry} in the {field} field", "Submit the form"),
         expected=f"The {field} is accepted and the form can be submitted",
     )]
     for sample in invalid:
         drafts.append(Draft(
             title=text.capitalize(f"{field} {sample.reason} is rejected"),
+            input=_invalid_input(sample, field),
             steps=(ctx.open_step, _invalid_entry_step(sample, field, kind is None), "Submit the form"),
             expected=f"The {field} is rejected and a clear validation message is shown next to the field",
         ))
@@ -157,12 +143,87 @@ def _field_kind(phrase: str) -> Optional[_FieldKind]:
     return None
 
 
+def _invalid_input(sample: _Sample, field: str) -> str:
+    if sample is _EMPTY:
+        return f"{text.capitalize(field)}: (empty)"
+    if sample.entry is None:
+        return f"{text.capitalize(field)}: a value {sample.reason}"
+    return f'{text.capitalize(field)}: "{sample.entry}"'
+
+
 def _invalid_entry_step(sample: _Sample, field: str, generic: bool) -> str:
     if sample is _EMPTY:
         return f"Leave the {field} field empty"
     if generic:
         return f"Enter a value {sample.reason} in the {field} field"
     return f'Enter "{sample.entry}" in the {field} field'
+
+
+# --- functional: the normal path, a wrong value and an empty value ----------------
+
+def functional(ctx: StoryContext, criterion: str) -> List[Draft]:
+    """Each case names the exact value typed, so a tester can run it as written."""
+    statement = text.sentence(criterion)
+    kind = _field_kind(criterion) or _field_kind(ctx.task) or _field_kind(ctx.feature)
+    goal = text.lower_first(statement)
+    if not kind:
+        return _functional_without_field(ctx, statement)
+
+    field = kind.label
+    value = kind.existing or kind.valid
+    wrong = kind.invalid[0]
+    adjective = "registered" if kind.existing else "valid"
+    return [
+        Draft(
+            title=text.capitalize(f"{adjective} {field}: {text.lower_first(text.strip_article(statement))}"),
+            input=f'{text.capitalize(field)}: "{value}"',
+            steps=(ctx.open_step, f'Enter the {adjective} {field} "{value}"', "Submit the form"),
+            expected=f"A confirmation message is shown and {goal}",
+        ),
+        Draft(
+            title=text.capitalize(f"{field} {wrong.reason} is rejected"),
+            input=f'{text.capitalize(field)}: "{wrong.entry}"',
+            steps=(ctx.open_step, f'Enter "{wrong.entry}" in the {field} field', "Submit the form"),
+            expected=(f"The {field} is rejected, a validation error is shown next to the field, "
+                      f"and this does not happen: {goal}"),
+        ),
+        Draft(
+            title=text.capitalize(f"empty {field} is rejected"),
+            input=f'{text.capitalize(field)}: "" (empty)',
+            steps=(ctx.open_step, f"Leave the {field} field empty", "Submit the form"),
+            expected=(f"The form is not submitted, a required-field message is shown for the {field}, "
+                      f"and this does not happen: {goal}"),
+        ),
+    ]
+
+
+def _functional_without_field(ctx: StoryContext, statement: str) -> List[Draft]:
+    """No known field in the story, so the input names which fields are filled and how."""
+    task = text.capitalize(ctx.task)
+    goal = text.lower_first(statement)
+    return [
+        Draft(
+            title=text.capitalize(text.strip_article(statement)),
+            input="All required fields: filled with correct values",
+            steps=(ctx.open_step, "Fill every required field with a correct value", f"{task}"),
+            expected=f"A confirmation message is shown and {goal}",
+        ),
+        Draft(
+            title="One required field in the wrong format is rejected",
+            input="One required field: a value in the wrong format, the other fields correct",
+            steps=(ctx.open_step, "Fill one required field with a value in the wrong format "
+                   "and the other fields correctly", f"{task}"),
+            expected=("The action is not completed, a validation error is shown next to the wrong field, "
+                      f"and this does not happen: {goal}"),
+        ),
+        Draft(
+            title="Empty required fields are rejected",
+            input="All required fields: (empty)",
+            steps=(ctx.open_step, "Leave every required field empty", f"{task}"),
+            expected=("The action is not completed, a required-field message is shown for each empty field, "
+                      f"and this does not happen: {goal}"),
+        ),
+    ]
 
 
 # --- boundary: just below, at and just above every limit --------------------------
@@ -192,7 +253,8 @@ def boundary(ctx: StoryContext, criterion: str) -> List[Draft]:
             quantity = limit.format(value)
             drafts.append(Draft(
                 title=_boundary_title(limit, subject, quantity, inside, condition),
-                steps=(ctx.open_step, _boundary_step(limit, subject, quantity, condition),
+                input=_boundary_input(limit, subject, quantity, value),
+                steps=(ctx.open_step, _boundary_step(limit, subject, quantity, condition, value),
                        "Submit the form" if limit.kind == "length" else "Check the result"),
                 expected=_boundary_expected(limit, subject, quantity, inside, condition, criterion),
             ))
@@ -222,9 +284,46 @@ def _boundary_title(limit: Limit, subject: str, quantity: str, inside: bool, con
     return text.capitalize(f"{subject} with {quantity} is {'accepted' if inside else 'rejected'}")
 
 
-def _boundary_step(limit: Limit, subject: str, quantity: str, condition: bool) -> str:
+def _boundary_input(limit: Limit, subject: str, quantity: str, value: Decimal) -> str:
+    if limit.kind in ("attempts", "repeat", "items"):
+        return text.capitalize(quantity)
+    sample = _length_sample(limit, subject, value)
+    if sample is not None:
+        return text.capitalize(f"{subject}: {sample} ({quantity})")
+    return text.capitalize(f"{subject}: {quantity}")
+
+
+# Characters a sample is cut from, so a 7-character password is "Passw0r".
+_PASSWORD_CHARS = "Passw0rd!Secure#2026Key"
+_DIGIT_CHARS = "1234567890"
+_LETTER_CHARS = "abcdefghijklmnopqrstuvwxyz"
+_LONGEST_LITERAL = 30
+
+
+def _length_sample(limit: Limit, subject: str, value: Decimal) -> Optional[str]:
+    """A literal value with exactly ``value`` characters: '"Passw0r"' for 7 characters."""
+    if limit.kind != "length" or value != value.to_integral_value() or limit.unit.split()[-1] in ("word", "words"):
+        return None
+    count = int(value)
+    if count == 0:
+        return '""'
+    if "digit" in limit.unit:
+        chars = _DIGIT_CHARS
+    elif "password" in subject.lower():
+        chars = _PASSWORD_CHARS
+    else:
+        chars = _LETTER_CHARS
+    if count > _LONGEST_LITERAL:
+        return f'"{chars[0]}" repeated {count} times'
+    return '"' + (chars * (count // len(chars) + 1))[:count] + '"'
+
+
+def _boundary_step(limit: Limit, subject: str, quantity: str, condition: bool, value: Decimal) -> str:
     kind = limit.kind
     if kind == "length":
+        sample = _length_sample(limit, subject, value)
+        if sample is not None:
+            return f"Enter {sample} ({quantity}) in the {subject} field"
         return f"Enter {text.with_article(subject)} with {quantity}"
     if kind == "attempts":
         return f"Perform {quantity}"
@@ -245,6 +344,12 @@ def _boundary_expected(limit: Limit, subject: str, quantity: str, inside: bool, 
         if inside:
             return f"The rule applies: {text.lower_first(text.sentence(criterion))}"
         return f"The rule does not apply, because {quantity} is outside the condition '{limit.phrase}'"
+    if limit.kind == "length":
+        if inside:
+            return (f"The {subject} is accepted because {quantity} is within the limit ({limit.phrase}), "
+                    "the form is submitted and a success message is shown")
+        return (f"The {subject} is rejected, the form is not submitted and an error message "
+                f"explains the limit ({limit.phrase})")
     if inside:
         return f"The {subject} is accepted because {quantity} is within the limit ({limit.phrase})"
     return f"The {subject} is rejected and an error message explains the limit ({limit.phrase})"
@@ -256,11 +361,13 @@ def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
     return [
         Draft(
             title=text.capitalize(f"{subject} exactly at the limit is accepted"),
+            input=text.capitalize(f"{subject}: exactly at the limit"),
             steps=(ctx.open_step, f"Use the largest (or smallest) {subject} the rule allows", "Check the result"),
             expected=f"The {subject} is accepted because it respects the rule: {statement}",
         ),
         Draft(
             title=text.capitalize(f"{subject} just past the limit is rejected"),
+            input=text.capitalize(f"{subject}: one step past the limit"),
             steps=(ctx.open_step, f"Use a {subject} one step past what the rule allows", "Check the result"),
             expected=f"The {subject} is rejected and an error message explains the rule: {statement}",
         ),
@@ -273,6 +380,8 @@ def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
 class _Roles:
     allowed: str
     blocked: str
+    allowed_account: str
+    blocked_account: Optional[str]   # None for an anonymous visitor
 
 
 _ONLY_GROUP_RE = re.compile(
@@ -289,12 +398,14 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
     drafts = [
         Draft(
             title=text.capitalize(f"{roles.allowed} can {action}"),
-            steps=(_login_step(roles.allowed), ctx.open_step, f"Try to {action}"),
+            input=_user_input(roles.allowed, roles.allowed_account),
+            steps=(_login_step(roles.allowed, roles.allowed_account), ctx.open_step, f"Try to {action}"),
             expected=f"Access is granted and the user can {action}",
         ),
         Draft(
             title=text.capitalize(f"{roles.blocked} cannot {action}"),
-            steps=(_login_step(roles.blocked), ctx.open_step, f"Try to {action}"),
+            input=_user_input(roles.blocked, roles.blocked_account),
+            steps=(_login_step(roles.blocked, roles.blocked_account), ctx.open_step, f"Try to {action}"),
             expected=("Access is denied (error page, HTTP 403 or redirect to login), the action is not "
                       "performed and no protected data is shown"),
         ),
@@ -302,7 +413,8 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
     if _PROTECTION_RE.search(criterion):
         drafts.append(Draft(
             title="Sensitive data is never stored or sent in plain text",
-            steps=(_login_step(roles.allowed), f"{text.capitalize(action)}",
+            input=f'{_user_input(roles.allowed, roles.allowed_account)}, password "Str0ng!Pass"',
+            steps=(_login_step(roles.allowed, roles.allowed_account), f"{text.capitalize(action)}",
                    "Inspect the network traffic and the stored data"),
             expected="Traffic uses HTTPS and the sensitive data is stored only in encrypted or hashed form",
         ))
@@ -312,22 +424,30 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
 def _roles(criterion: str) -> _Roles:
     lowered = criterion.lower()
     if re.search(r"\badmin(?:istrator)?s?\b", lowered):
-        return _Roles("administrator", "regular user (not an administrator)")
+        return _Roles("administrator", "regular user (not an administrator)",
+                      "admin@example.com", "user@example.com")
     if re.search(r"\bowners?\b|\btheir own\b|\bhis own\b|\bher own\b", lowered):
-        return _Roles("owner of the data", "different logged-in user")
+        return _Roles("owner of the data", "different logged-in user",
+                      "owner@example.com", "other.user@example.com")
     only = _ONLY_GROUP_RE.search(criterion)
     if only:
         group = only["group"].lower()
-        return _Roles(f"user in the '{group}' group", f"user outside the '{group}' group")
+        return _Roles(f"user in the '{group}' group", f"user outside the '{group}' group",
+                      f"{re.sub(r'[^a-z]+', '.', group)}.member@example.com", "outsider@example.com")
     if re.search(r"\blogged[\s-]in\b|\bauthenticated\b|\bsigned[\s-]in\b|\blog\s*in\b|\bsign\s*in\b", lowered):
-        return _Roles("logged-in user", _ANONYMOUS)
-    return _Roles("authorized user", "unauthorized user")
+        return _Roles("logged-in user", _ANONYMOUS, "user@example.com", None)
+    return _Roles("authorized user", "unauthorized user",
+                  "authorized.user@example.com", "unauthorized.user@example.com")
 
 
-def _login_step(role: str) -> str:
-    if role == _ANONYMOUS:
+def _user_input(role: str, account: Optional[str]) -> str:
+    return f"User: {role} ({account})" if account else f"User: {role}"
+
+
+def _login_step(role: str, account: Optional[str]) -> str:
+    if account is None:
         return "Make sure no user is logged in"
-    return f"Log in as {text.with_article(role)}"
+    return f"Log in as {text.with_article(role)} ({account})"
 
 
 # --- performance: one user, then under load ---------------------------------------
@@ -353,12 +473,14 @@ def performance(ctx: StoryContext, criterion: str) -> List[Draft]:
     return [
         Draft(
             title=text.capitalize(f"{subject} meets the target with a single user"),
+            input="1 user, 10 requests in a row",
             steps=(ctx.open_step, "Measure the response time with 1 user, 10 times in a row",
                    "Record the average and the slowest time"),
             expected=single_expected,
         ),
         Draft(
             title=text.capitalize(f"{subject} meets the target under load ({load})"),
+            input=f"{load} for 5 minutes",
             steps=(f"Prepare a load test (for example with JMeter or Locust) for the {ctx.feature_name} page",
                    f"Simulate {load} for 5 minutes",
                    "Record the 95th-percentile response time and the error rate"),
@@ -377,6 +499,7 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     statement = text.lower_first(text.sentence(criterion))
     drafts = [Draft(
         title=f"First-time user can {ctx.task} without help",
+        input="A first-time user, no instructions",
         steps=(f"Give a first-time user this task: {ctx.task}", "Give no instructions or help",
                "Observe where the user hesitates or makes mistakes"),
         expected=f"The user completes the task without help, and this holds: {statement}",
@@ -384,6 +507,7 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     if _MOBILE_RE.search(criterion):
         drafts.append(Draft(
             title="Page works on a phone-sized screen",
+            input="Screen width: 360 px",
             steps=(f"{ctx.open_step} on a screen 360 px wide", f"Try to {ctx.task}",
                    "Check the text, buttons and layout"),
             expected="All content fits the screen without sideways scrolling and every button is easy to tap",
@@ -391,12 +515,14 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     elif _MESSAGE_RE.search(criterion):
         drafts.append(Draft(
             title="Messages are clear and helpful",
+            input="One successful and one failed attempt",
             steps=(ctx.open_step, "Cause one successful and one failed attempt", "Read the messages shown"),
             expected="Each message says in plain words what happened and what to do next",
         ))
     else:
         drafts.append(Draft(
             title="Task can be completed with the keyboard only",
+            input="Keyboard only: Tab, Shift+Tab, Enter and Space",
             steps=(ctx.open_step, f"Try to {ctx.task} using only Tab, Shift+Tab, Enter and Space",
                    "Watch the focus indicator"),
             expected="Every control can be reached and used with the keyboard and the focused element is always visible",
