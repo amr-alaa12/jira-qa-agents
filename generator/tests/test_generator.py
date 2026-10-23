@@ -122,15 +122,23 @@ def test_boundary_uses_the_number_in_the_criterion():
     ]
     assert boundary[0]["steps"] == [
         "Open the reset password page",
-        "Enter a new password with 7 characters",
+        'Enter "Passw0r" (7 characters) in the new password field',
         "Submit the form",
     ]
     assert "rejected" in boundary[0]["expected"] and "at least 8 characters" in boundary[0]["expected"]
+    assert "form is submitted" in boundary[1]["expected"]
     assert [tc["input"] for tc in boundary] == [
-        "New password: 7 characters",
-        "New password: 8 characters",
-        "New password: 9 characters",
+        'New password: "Passw0r" (7 characters)',
+        'New password: "Passw0rd" (8 characters)',
+        'New password: "Passw0rd!" (9 characters)',
     ]
+
+
+def test_boundary_sample_has_exactly_the_tested_length():
+    story = dict(PRODUCT_ADMIN, acceptance_criteria=[PRODUCT_ADMIN["acceptance_criteria"][1]])
+    inputs = [tc["input"] for tc in generate_test_cases(story, ["boundary"])]
+    assert inputs[0] == 'Product name: "ab" (2 characters)'
+    assert inputs[3] == 'Product name: "a" repeated 51 times (51 characters)'
 
 
 def test_boundary_input_for_attempts_is_the_count():
@@ -185,7 +193,8 @@ def test_security_has_an_allowed_and_a_blocked_user():
         "Regular user (not an administrator) cannot delete products",
     ]
     assert "denied" in test_cases[1]["expected"]
-    assert test_cases[0]["input"] == "User: administrator"
+    assert test_cases[0]["input"] == "User: administrator (admin@example.com)"
+    assert test_cases[1]["steps"][0] == "Log in as a regular user (not an administrator) (user@example.com)"
 
 
 def test_security_for_logged_in_users_uses_an_anonymous_visitor():
@@ -194,12 +203,27 @@ def test_security_for_logged_in_users_uses_an_anonymous_visitor():
     assert blocked["steps"][0] == "Make sure no user is logged in"
 
 
-def test_functional_has_normal_path_and_failure():
-    test_cases = generate_test_cases(RESET_PASSWORD, ["functional", "boundary"])[:2]
-    assert test_cases[0]["title"] == "User receives a reset link by email"
-    assert test_cases[0]["steps"][1] == "Reset the password using valid data"
-    assert test_cases[1]["title"].startswith("Failure path")
-    assert "invalid or missing data" in test_cases[1]["steps"][1]
+def test_functional_uses_concrete_values():
+    test_cases = generate_test_cases(RESET_PASSWORD, ["functional", "boundary"])[:3]
+    assert [tc["input"] for tc in test_cases] == [
+        'Email address: "registered.user@example.com"',
+        'Email address: "userexample.com"',
+        'Email address: "" (empty)',
+    ]
+    assert test_cases[0]["steps"][1] == 'Enter the registered email address "registered.user@example.com"'
+    assert test_cases[0]["expected"] == "A confirmation message is shown and the user receives a reset link by email"
+    assert "validation error" in test_cases[1]["expected"]
+    assert "required-field message" in test_cases[2]["expected"]
+
+
+def test_functional_without_a_known_field_splits_wrong_and_empty():
+    story = dict(PRODUCT_ADMIN, acceptance_criteria=["The product appears in the catalog"])
+    inputs = [tc["input"] for tc in generate_test_cases(story, ["functional"])]
+    assert inputs == [
+        "All required fields: filled with correct values",
+        "One required field: a value in the wrong format, the other fields correct",
+        "All required fields: (empty)",
+    ]
 
 
 def test_performance_uses_the_time_limit():
