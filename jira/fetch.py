@@ -1,8 +1,9 @@
-
+import streamlit as st
 import json
 import os
 import re
 import sys
+from streamlit.errors import StreamlitSecretNotFoundError
 from pathlib import Path
 
 import requests
@@ -77,12 +78,30 @@ def extract_criteria(description):
 
 
 def fetch_stories(project_key):
+    
     """Fetch Jira issues and save them using the agreed JSON schema."""
-    base_url = os.getenv("JIRA_BASE_URL", "").rstrip("/")
-    email = os.getenv("JIRA_EMAIL", "")
-    token = os.getenv("JIRA_API_TOKEN", "")
-    ac_field = os.getenv("JIRA_AC_FIELD", "").strip()
+ 
+    # Read Streamlit Cloud Secrets when available; otherwise use local .env
+    try:
+        secrets = dict(st.secrets)
+    except StreamlitSecretNotFoundError:
+        secrets = {}
 
+    base_url = str(
+        secrets.get("JIRA_BASE_URL", os.getenv("JIRA_BASE_URL", ""))
+    ).rstrip("/")
+
+    email = str(
+        secrets.get("JIRA_EMAIL", os.getenv("JIRA_EMAIL", ""))
+    )
+
+    token = str(
+        secrets.get("JIRA_API_TOKEN", os.getenv("JIRA_API_TOKEN", ""))
+    )
+
+    ac_field = str(
+        secrets.get("JIRA_AC_FIELD", os.getenv("JIRA_AC_FIELD", ""))
+    ).strip()
     if not all([base_url, email, token]):
         raise ValueError(
             "Missing JIRA_BASE_URL, JIRA_EMAIL, or JIRA_API_TOKEN "
@@ -114,8 +133,9 @@ def fetch_stories(project_key):
 
     if project_response.status_code == 404:
         raise RuntimeError(
-            f"Project '{project_key}' was not found or is not accessible."
-        )
+        f"Jira returned 404 for project '{project_key}'. "
+        f"Response: {project_response.text[:500]}"
+    )
 
     project_response.raise_for_status()
 
