@@ -1,0 +1,5 @@
+# The templates use only the Python standard library (3.9+).
+# The AI model (model/model.pkl) needs scikit-learn and joblib; not needed with --categories.
+scikit-learn
+joblib
+pytest>=7
