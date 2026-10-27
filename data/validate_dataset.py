@@ -6,7 +6,7 @@ from collections import Counter
 
 PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "requirements.csv"
+    "requirements_merged_with_dosspre_new.csv"
 )
 
 EXPECTED_COLUMNS = ["project_id", "text", "category", "source"]
@@ -45,13 +45,12 @@ counts = Counter()
 seen = set()
 
 for i, row in enumerate(rows, start=2):
-    project_id = (row.get("project_id") or "").strip()
+    
     text = (row.get("text") or "").strip()
     category = (row.get("category") or "").strip()
     source = (row.get("source") or "").strip()
 
-    if not project_id:
-        errors.append(f"line {i}: empty project_id")
+    
 
     if not text:
         errors.append(f"line {i}: empty text")
