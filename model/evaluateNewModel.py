@@ -1,7 +1,6 @@
 import joblib
 import os
 
-# 1. Point to where the saved models are stored
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'ai_classifier_model.pkl')
 VEC_PATH = os.path.join(BASE_DIR, 'tfidf_vectorizer.pkl')
@@ -10,14 +9,13 @@ print("Loading saved model and vectorizer...")
 classifier_model = joblib.load(MODEL_PATH)
 vectorizer = joblib.load(VEC_PATH)
 
-# 2. Your 20 testing criteria
 criteria_list = [
     "Given a valid Jira API token, the system must successfully authenticate and fetch a list of available projects.",
     "When a user inputs a specific Jira issue ID, the system must retrieve the issue's title and description.",
     "If the retrieved Jira issue does not contain any acceptance criteria, the system must display a 'No acceptance criteria found' warning.",
     "The system must support fetching user stories from Jira Cloud instances via the REST API v3.",
     "If the Jira API returns a 401 Unauthorized error, the system must prompt the user to check their environment variables.",
-    "The AI classifier must return exactly one of the six predefined categories for each input criterion.",
+    "The AI classifier must return exactly one of the nine predefined categories for each input criterion.",
     "The AI classifier must attach a confidence score (between 0.0 and 1.0) to every predicted category.",
     "If the text input is completely empty or contains only special characters, the classifier must flag it as invalid rather than guessing.",
     "The classifier must be able to process an array of 50 acceptance criteria in under 5 seconds.",
@@ -34,14 +32,12 @@ criteria_list = [
     "The application must not log or expose the Jira API token in any console output or error message."
 ]
 
-print("\nStarting Classifier Evaluation...\n")
+print("\nStarting Classifier Evaluation across all 9 categories...\n")
 
-# 3. Translate the text and predict
 vec_criteria = vectorizer.transform(criteria_list)
 preds = classifier_model.predict(vec_criteria)
 probs = classifier_model.predict_proba(vec_criteria)
 
-# 4. Print the output format for manual checking
 for i, (crit, pred, prob) in enumerate(zip(criteria_list, preds, probs), 1):
     conf = max(prob)
     print("-" * 60)
