@@ -1,7 +1,7 @@
 """Pick the category of each acceptance criterion with the trained AI model.
 
-The model is the requirement classifier (Member 3): a scikit-learn pipeline
-saved to ``model/model.pkl`` by ``python model/train_and_predict.py``.
+The model is the requirement classifier (model/): a scikit-learn pipeline
+saved to ``model/model.pkl`` by ``python model/train_new_model.py``.
 
     from generator import generate_with_model
     test_cases = generate_with_model(stories)
@@ -9,15 +9,40 @@ saved to ``model/model.pkl`` by ``python model/train_and_predict.py``.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .core import CATEGORIES, _criteria, generate_for_stories
+from .limits import extract_limits
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "model.pkl"
 LOW_CONFIDENCE = 0.5   # predictions below this are worth checking by hand
 
 Prediction = Tuple[str, float]
+
+# Jira formatting that says nothing about the category: "AC1:", "1.", "- ", "* ", "[ ]".
+_LABEL_RE = re.compile(r"^\s*(?:(?:AC|A\.C\.)\s*\d+\s*[:.)-]\s*|\d+\s*[.)]\s+|[-*•–]\s+|\[[ xX]?\]\s*)+")
+
+# A criterion with a numeric limit (length, count, attempts, money, %, size, time window) is a
+# boundary criterion, unless it is about speed. The training data has almost no limits on time,
+# money or percentages, so the model alone reads "The reset link expires after 30 minutes" as
+# functional. Checked on project-grouped cross-validation and on data/jira_benchmark.csv.
+_SPEED_RE = re.compile(
+    r"\b(?:load\w*|respon\w*|fast|slow\w*|latency|throughput|concurrent|simultaneous|per\s+(?:second|minute|hour)"
+    r"|peak|traffic|delay|freez\w*|smooth\w*|performance|quick\w*|speed|starts?\s+in|takes?|finish\w*"
+    r"|process\w*|delivered|appear\w*|refresh\w*|ms|milliseconds?|fetch\w*|retriev\w*|quer\w*|search\w*|sync\w*)\b",
+    re.IGNORECASE,
+)
+
+
+def clean_criterion(criterion: str) -> str:
+    """Remove list markers and labels Jira adds ("AC2: ", "1. ", "- ") and collapse whitespace."""
+    return re.sub(r"\s+", " ", _LABEL_RE.sub("", str(criterion))).strip()
+
+
+def _has_limit(criterion: str) -> bool:
+    return any(limit.kind != "other" or limit.currency or limit.unit == "%" for limit in extract_limits(criterion))
 
 
 class CategoryModel:
@@ -38,7 +63,7 @@ class CategoryModel:
         path = Path(path) if path else MODEL_PATH
         if not path.is_file():
             raise ValueError(f"The AI model was not found: {path}. Train it with "
-                             "'python model/train_and_predict.py', or pass --categories with hand-typed categories")
+                             "'python model/train_new_model.py', or pass --categories with hand-typed categories")
         try:
             import joblib
         except ImportError:
@@ -50,13 +75,24 @@ class CategoryModel:
         return cls(pipeline)
 
     def predict(self, criteria: Sequence[str]) -> List[Prediction]:
-        """One ``(category, confidence)`` pair per criterion, in the same order."""
+        """One ``(category, confidence)`` pair per criterion, in the same order.
+
+        The confidence is always the model's own probability for the returned category, so a
+        criterion moved to ``boundary`` by the limit rule usually shows "please check".
+        """
+        if isinstance(criteria, str):  # a bare string would be classified letter by letter
+            raise TypeError("predict() takes a list of criteria; wrap one criterion as [criterion]")
         if not criteria:
             return []
+        texts = [clean_criterion(criterion) for criterion in criteria]
         predictions = []
-        for row in self._pipeline.predict_proba(list(criteria)):
+        for text, row in zip(texts, self._pipeline.predict_proba(texts)):
             best = max(range(len(self._classes)), key=lambda index: row[index])
-            predictions.append((self._classes[best], round(float(row[best]), 2)))
+            category = self._classes[best]
+            if category == "functional" and "boundary" in self._classes and _has_limit(text) \
+                    and not _SPEED_RE.search(text):
+                category = "boundary"
+            predictions.append((category, round(float(row[self._classes.index(category)]), 2)))
         return predictions
 
     def categorize(self, stories: Iterable[Mapping[str, Any]]) -> Dict[str, List[Prediction]]:

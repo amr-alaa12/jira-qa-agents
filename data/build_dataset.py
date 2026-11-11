@@ -4,7 +4,10 @@ Run:  python data/build_dataset.py
 To add more rows: add items to the lists/templates below (or append rows
 by hand to requirements.csv), then run validate_dataset.py.
 """
-import csv, itertools, os, random
+import csv
+import itertools
+import os
+import random
 
 random.seed(42)
 PER_CATEGORY = 200
@@ -202,17 +205,23 @@ for s_ in screens:
 POOLS = {"functional": functional, "validation": validation, "boundary": boundary,
          "security": security, "performance": performance, "usability": usability}
 
-rows = []
-for cat, pool in POOLS.items():
-    items = sorted(pool)
-    random.shuffle(items)
-    chosen = items[:PER_CATEGORY]
-    print(f"{cat:12s} available={len(items):4d} used={len(chosen)}")
-    rows += [(t, cat) for t in chosen]
-random.shuffle(rows)
 
-with open(OUT, "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f)
-    w.writerow(["text", "category"])
-    w.writerows(rows)
-print(f"Wrote {len(rows)} rows to {OUT}")
+def main():
+    rows = []
+    for cat, pool in POOLS.items():
+        items = sorted(pool)
+        random.shuffle(items)
+        chosen = items[:PER_CATEGORY]
+        print(f"{cat:12s} available={len(items):4d} used={len(chosen)}")
+        rows += [(t, cat) for t in chosen]
+    random.shuffle(rows)
+
+    with open(OUT, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["text", "category"])
+        w.writerows(rows)
+    print(f"Wrote {len(rows)} rows to {OUT}")
+
+
+if __name__ == "__main__":
+    main()

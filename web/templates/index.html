@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jira QA Agents</title>
+  <style>
+    :root {
+      --ink: #202c3b; --muted: #5e6c7d; --line: #e3e8ef; --surface: #ffffff;
+      --accent: #2459a6; --accent-hover: #194785; --bg: #f4f6f9;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+           font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 1080px; margin: 0 auto; padding: 2.6rem 1.25rem 4rem; }
+    h1 { font-size: 2.35rem; margin: 0 0 .25rem; letter-spacing: -.025em; }
+    h2 { font-size: 1.35rem; margin: 2rem 0 .75rem; }
+    h3 { font-size: 1.1rem; margin: 0 0 .5rem; }
+    p, label, .caption { color: var(--muted); }
+    .caption { font-size: .875rem; margin: .25rem 0; }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(32, 44, 59, .035); padding: 1rem 1.25rem; margin: .75rem 0; }
+    .row { display: flex; gap: 1rem; justify-content: space-between; flex-wrap: wrap; }
+    .row > .grow { flex: 5 1 320px; }
+    .row > .side { flex: 2 1 180px; }
+    select { width: 100%; padding: .65rem .75rem; border: 1px solid #d7dee8; border-radius: 10px;
+             background: #fff; color: var(--ink); font-size: 1rem; }
+    .button { display: block; width: 100%; text-align: center; padding: .75rem; border-radius: 10px;
+              background: var(--accent); color: #fff; font-weight: 600; text-decoration: none; border: 0;
+              font-size: 1rem; cursor: pointer; box-shadow: 0 2px 5px rgba(41, 75, 112, .16); }
+    .button:hover { background: var(--accent-hover); }
+    .button.secondary { background: #fff; color: #34465b; border: 1px solid #cbd5e1; box-shadow: none;
+                        display: inline-block; width: auto; padding: .6rem 1rem; }
+    code { background: #eef2f7; border-radius: 6px; padding: .1rem .4rem; font-size: .9rem; }
+    .alert { border-radius: 12px; padding: .75rem 1rem; margin: .75rem 0; }
+    .warning { background: #fffaeb; border: 1px solid #fedf89; color: #93370d; }
+    .info { background: #eff8ff; border: 1px solid #b2ddff; color: #194185; }
+    .success { background: #ecfdf3; border: 1px solid #abefc6; color: #085d3a; }
+    .error { background: #fef3f2; border: 1px solid #fecdca; color: #912018; }
+    details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin: .6rem 0; }
+    summary { cursor: pointer; padding: .85rem 1.1rem; font-weight: 600; }
+    details > div { padding: 0 1.1rem 1rem; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+    .low { color: #b54708; }
+    ol { margin: .25rem 0 0; padding-left: 1.4rem; }
+    .account { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+               background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+               padding: .75rem 1rem; margin: 1rem 0 0; }
+    .account .who { color: var(--ink); }
+    .atlassian { background: #0052cc; display: inline-block; width: auto; padding: .6rem 1.1rem; }
+    .atlassian:hover { background: #0747a6; }
+    .pickers { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .pickers { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Jira QA Agents</h1>
+  <p class="caption">Choose a Jira story, review its acceptance criteria, then generate test cases with clear
+    inputs and expected outputs.</p>
+
+  <div class="account">
+    {% if user %}
+      <span class="who">Logged in as <strong>{{ user }}</strong>{% if site %} · {{ site.name }}{% endif %}</span>
+      <a class="button secondary" href="/logout">Log out</a>
+    {% elif configured %}
+      <span>See your own Jira projects and stories.</span>
+      <a class="button atlassian" href="/login">Log in with Atlassian</a>
+    {% else %}
+      <span>Atlassian login is not set up on this server yet, so the sample stories are shown.</span>
+    {% endif %}
+  </div>
+
+  <p class="caption">Stories: {{ stories|length }} | Source: {{ source }}</p>
+  {% if warning %}<div class="alert warning">{{ warning }}</div>{% endif %}
+
+  {% if user and (sites|length > 1 or projects) %}
+    <div class="pickers">
+      {% if sites|length > 1 %}
+        <form method="get" action="/site">
+          <label for="cloud_id">Jira site</label>
+          <select id="cloud_id" name="cloud_id" onchange="this.form.submit()">
+            {% for item in sites %}
+              <option value="{{ item.id }}" {% if site and item.id == site.id %}selected{% endif %}>{{ item.name }}</option>
+            {% endfor %}
+          </select>
+          <noscript><button class="button secondary" type="submit">Switch site</button></noscript>
+        </form>
+      {% endif %}
+      {% if projects %}
+        <form method="get" action="/">
+          <label for="project">Jira project</label>
+          <select id="project" name="project" onchange="this.form.submit()">
+            {% for item in projects %}
+              <option value="{{ item.key }}" {% if project and item.key == project.key %}selected{% endif %}>
+                {{ item.key }} - {{ item.name }}</option>
+            {% endfor %}
+          </select>
+          <noscript><button class="button secondary" type="submit">Show project</button></noscript>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if not story %}
+    <div class="alert info">This project has no issues yet.</div>
+  {% else %}
+  <h2>1. Choose a story</h2>
+  <form method="get" action="/">
+    <label for="story">User story</label>
+    <select id="story" name="story" onchange="this.form.submit()">
+      {% for item in stories %}
+        <option value="{{ item.key }}" {% if item.key == story.key %}selected{% endif %}>
+          {{ item.key }} - {{ item.title or "Untitled story" }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="button secondary" type="submit">Show story</button></noscript>
+  </form>
+
+  <hr>
+  <h2>2. Review the story</h2>
+  <h3>{{ story.key }}: {{ story.title or "Untitled story" }}</h3>
+  <p>{{ story.description or "No description provided." }}</p>
+  <h3>Acceptance criteria</h3>
+  <p class="caption">The predicted category helps determine which test cases are created.</p>
+  {% if not rows %}
+    <div class="alert info">This story has no acceptance criteria in Jira, so no test cases can be generated.</div>
+  {% endif %}
+  {% for criterion, (category, confidence) in rows %}
+    <div class="card row">
+      <div class="grow"><strong>{{ loop.index }}.</strong> {{ criterion }}</div>
+      <div class="side">
+        <strong>Predicted category:</strong> <code>{{ category }}</code>
+        <div class="caption {% if confidence < low %}low{% endif %}">Confidence: {{ (confidence * 100)|round|int }}%
+          {% if confidence < low %} — please check{% endif %}</div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <hr>
+  <h2>3. Generate test cases</h2>
+  <p class="caption">Create test cases from this story's acceptance criteria.</p>
+  <a class="button" href="/?story={{ story.key|urlencode }}&amp;generate=1">Generate test cases</a>
+
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  {% if test_cases %}
+    <hr>
+    <h2>Your test cases</h2>
+    <div class="alert success">{{ test_cases|length }} test case(s) ready for {{ story.key }}.</div>
+    <p class="caption">Open a case to review its input, steps, and expected output.</p>
+    {% for case in test_cases %}
+      <details>
+        <summary>{{ case.id }} - {{ case.title }}</summary>
+        <div>
+          <p class="caption">Category: {{ case.type }}</p>
+          <div class="cols">
+            <div><strong>Input</strong><br>{{ case.input or "Not provided" }}</div>
+            <div><strong>Expected output</strong><br>{{ case.expected_output or "Not provided" }}</div>
+          </div>
+          <p><strong>Steps</strong></p>
+          <ol>{% for step in case.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+        </div>
+      </details>
+    {% endfor %}
+    <p><a class="button secondary" href="/download?story={{ story.key|urlencode }}">Download test cases as JSON</a></p>
+  {% elif generated and rows and not error %}
+    <div class="alert info">No test cases were generated for this story.</div>
+  {% elif not generated %}
+    <div class="alert info">No test cases yet. Select a story, then choose <strong>Generate test cases</strong>.</div>
+  {% endif %}
+  {% endif %}
+
+  <details>
+    <summary>About Jira QA Agents</summary>
+    <div>
+      <p>Log in with your Atlassian account to load your own Jira stories (read-only). The app only sees the
+        Jira sites and projects your account can see. Without logging in, sample stories are shown.</p>
+      <p>Acceptance criteria are classified using the trained requirement classifier.</p>
+      <p>Test cases are generated using the project's test case generator.</p>
+    </div>
+  </details>
+</main>
+</body>
+</html>

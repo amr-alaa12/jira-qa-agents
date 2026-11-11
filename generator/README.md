@@ -1,4 +1,4 @@
-# Test Case Generator (Member 4)
+# Test Case Generator
 
 Takes a user story, lets the AI model (the requirement classifier, `model/model.pkl`) pick the category of each acceptance criterion, and writes test cases in the agreed format (`examples/test_cases.json`). Since the 21/10 meeting every test case also has an `input` field, so each result states its **input** and its **expected output**. Inputs are concrete values a tester can type (`Email address: "registered.user@example.com"`), not descriptions such as "valid data".
 
@@ -12,7 +12,7 @@ Takes a user story, lets the AI model (the requirement classifier, `model/model.
   "type": "boundary",
   "input": "New password: \"Passw0r\" (7 characters)",
   "steps": ["Open the reset password page", "Enter \"Passw0r\" (7 characters) in the new password field", "Submit the form"],
-  "expected": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
+  "expected_output": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
 }
 ```
 
@@ -21,16 +21,16 @@ Takes a user story, lets the AI model (the requirement classifier, `model/model.
 From the repository root:
 
 ```bash
-pip install -r generator/requirements.txt
-python model/train_and_predict.py           # once: trains and saves model/model.pkl
+pip install -r requirements.txt
+python model/train_new_model.py           # once: trains and saves model/model.pkl
 python generator/generate.py                # examples/stories.json -> generator/test_cases.json
 ```
 
 The script prints the category the model chose for every criterion with its confidence, and marks predictions below 0.5 with `<- low confidence, please check`:
 
 ```text
-SHOP-1: The user receives a reset link by email -> functional (0.69)
-SHOP-1: The new password must be at least 8 characters -> boundary (0.87)
+SHOP-1: The user receives a reset link by email -> functional (0.75)
+SHOP-1: The new password must be at least 8 characters -> boundary (0.63)
 Wrote 6 test cases for 1 story to generator/test_cases.json
 ```
 

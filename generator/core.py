@@ -4,16 +4,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
-from .templates import TEMPLATES, StoryContext
+from .templates import TEMPLATES, StoryContext, shaped
 
 CATEGORIES = ("functional", "validation", "boundary", "security", "performance", "usability")
-TEST_CASE_FIELDS = ("story_key", "id", "title", "type", "input", "steps", "expected")
+TEST_CASE_FIELDS = ("story_key", "id", "title", "type", "input", "steps", "expected_output")
 
 
 def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> List[Dict[str, Any]]:
     """Return the test cases for one story, in the agreed test case format.
 
-    Each test case states its ``input`` (the test data) and its ``expected`` output.
+    Each test case states its ``input`` (the test data) and its ``expected_output``.
 
     ``categories`` holds one category per acceptance criterion, in the same
     order. Each item is a category name ("boundary") or the
@@ -32,7 +32,7 @@ def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> 
     context = StoryContext.from_story(story)
     test_cases: List[Dict[str, Any]] = []
     for criterion, category in zip(criteria, names):
-        for draft in TEMPLATES[category](context, criterion):
+        for draft in shaped(context, criterion, category) or TEMPLATES[category](context, criterion):
             test_cases.append({
                 "story_key": context.key,
                 "id": f"{context.key}-TC{len(test_cases) + 1}",
@@ -40,7 +40,7 @@ def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> 
                 "type": category,
                 "input": draft.input,
                 "steps": list(draft.steps),
-                "expected": draft.expected,
+                "expected_output": draft.expected_output,
             })
     return test_cases
 

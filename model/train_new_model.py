@@ -1,58 +1,91 @@
-import pandas as pd
+"""Train the requirement classifier and save it as ONE pipeline: model/model.pkl.
+
+Run from anywhere:  python model/train_new_model.py
+The saved pipeline takes raw text, so the app and the generator can use it
+directly (generator.CategoryModel.load()).
+
+Evaluation is honest about where the model will be used:
+- DOSSPRE requirements are split BY PROJECT, so no project is in both train and test;
+- template-generated rows are only ever used for training;
+- data/jira_benchmark.csv (120 Jira-style acceptance criteria, 20 per category) is never trained on.
+After evaluation the final model is trained on ALL rows, so no labelled data is thrown away.
+"""
+from pathlib import Path
+
 import joblib
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-import os
+from sklearn.model_selection import GroupShuffleSplit
+from sklearn.pipeline import FeatureUnion, Pipeline
 
-# 1. Load dataset from the 'data' folder
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_PATH = os.path.join(BASE_DIR, '..', 'data', 'requirements_merged_with_dosspre_new.csv')
+MODEL_DIR = Path(__file__).resolve().parent
+DATA_DIR = MODEL_DIR.parent / "data"
+CSV_PATH = DATA_DIR / "requirements_merged_with_dosspre_new.csv"
+BENCHMARK_PATH = DATA_DIR / "jira_benchmark.csv"
+MODEL_PATH = MODEL_DIR / "model.pkl"
 
-print("Loading dataset from data folder...")
-df = pd.read_csv(CSV_PATH, encoding='latin1')
-df = df.dropna(subset=['text', 'category'])
+# The six categories the generator has templates for (see generator/core.py).
+CATEGORIES = ["functional", "validation", "boundary", "security", "performance", "usability"]
 
-# 2. Include all 9 categories and standardize to uppercase
-target_categories = [
-    'functional', 'security', 'performance', 'usability', 
-    'validation', 'boundary', 'reliability', 'portability', 'maintainability'
-]
-df_clean = df[df['category'].str.lower().isin(target_categories)].copy()
-df_clean['category'] = df_clean['category'].str.upper()
+# Keep one-character tokens, digits and the symbols that signal limits and formats ($, %, @).
+TOKEN_PATTERN = r"(?u)\b\w+\b|[$€£%@]"
 
-print("Full Dataset Category Distribution (All 9 Categories):")
-print(df_clean['category'].value_counts())
 
-# 3. Stratified split to guarantee all 9 categories are present in both train and test sets
-X_train, X_test, y_train, y_test = train_test_split(
-    df_clean['text'], 
-    df_clean['category'], 
-    test_size=0.2, 
-    random_state=42,
-    stratify=df_clean['category']
-)
+def load_dataset(path=CSV_PATH):
+    df = pd.read_csv(path, encoding="utf-8")
+    df = df.dropna(subset=["text", "category"])
+    df["category"] = df["category"].str.strip().str.lower()
+    dropped = df[~df["category"].isin(CATEGORIES)]
+    print(f"Dropped {len(dropped)} rows outside the six categories: "
+          f"{dropped['category'].value_counts().to_dict()}")
+    return df[df["category"].isin(CATEGORIES)].copy()
 
-# 4. Vectorizer with N-grams to catch multi-word phrases (like "API token" or "error message")
-vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec = vectorizer.transform(X_test)
 
-# 5. Tuned Logistic Regression with higher C parameter for sharper decision boundaries
-model = LogisticRegression(C=3.0, max_iter=1000, class_weight='balanced')
-model.fit(X_train_vec, y_train)
+def build_pipeline():
+    """Word 1-2-grams WITHOUT stop-word removal, plus character n-grams.
 
-# 6. Evaluate
-y_pred = model.predict(X_test_vec)
-print("\nModel Evaluation on Test Set:")
-print(classification_report(y_test, y_pred))
+    English stop-word lists drop exactly the words that decide the category here:
+    "only", "not", "cannot", "must", "at least", "more", "less", "within", "under", "empty".
+    Character n-grams make the model robust to word forms ("validate", "validation", "invalid").
+    """
+    words = TfidfVectorizer(ngram_range=(1, 2), token_pattern=TOKEN_PATTERN, sublinear_tf=True)
+    chars = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 5), sublinear_tf=True, min_df=2)
+    return Pipeline([
+        ("features", FeatureUnion([("words", words), ("chars", chars)])),
+        ("clf", LogisticRegression(C=10.0, max_iter=3000, class_weight="balanced")),
+    ])
 
-# 7. Save the model and vectorizer
-MODEL_SAVE_PATH = os.path.join(BASE_DIR, 'ai_classifier_model.pkl')
-VEC_SAVE_PATH = os.path.join(BASE_DIR, 'tfidf_vectorizer.pkl')
 
-joblib.dump(model, MODEL_SAVE_PATH)
-joblib.dump(vectorizer, VEC_SAVE_PATH)
+def split_by_project(df, test_size=0.3, seed=42):
+    """Real rows only; DOSSPRE grouped by project, each hand-written row is its own group."""
+    real = df[df["source"] != "generated"]
+    groups = real["project_id"].astype(str).where(real["source"] == "dosspre", "hw" + real.index.astype(str))
+    train_idx, test_idx = next(GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=seed)
+                               .split(real, real["category"], groups))
+    return real.iloc[train_idx], real.iloc[test_idx]
 
-print(f"\nSuccess! Updated 9-category model saved to {MODEL_SAVE_PATH}")
+
+def main():
+    df = load_dataset()
+    print(df["category"].value_counts(), "\n")
+
+    real_train, real_test = split_by_project(df)
+    train = pd.concat([df[df["source"] == "generated"], real_train])
+    pipeline = build_pipeline().fit(train["text"], train["category"])
+    print(f"Evaluation on {len(real_test)} held-out REAL requirements (unseen projects):")
+    print(classification_report(real_test["category"], pipeline.predict(real_test["text"]), zero_division=0))
+
+    final = build_pipeline().fit(df["text"], df["category"])
+    if BENCHMARK_PATH.is_file():
+        bench = pd.read_csv(BENCHMARK_PATH, encoding="utf-8")
+        print(f"Jira-style benchmark ({len(bench)} criteria, never trained on), final model:")
+        print(classification_report(bench["category"], final.predict(bench["text"]), zero_division=0))
+
+    joblib.dump(final, MODEL_PATH, compress=3)
+    print(f"Saved {MODEL_PATH} (trained on all {len(df)} rows)")
+
+
+if __name__ == "__main__":
+    main()

@@ -78,6 +78,23 @@ _PREFIX_RE = re.compile(
     + r")\s*$",
     re.IGNORECASE,
 )
+# A negation just before the qualifier turns the limit around:
+# "cannot be longer than 12 characters" means "at most 12 characters".
+_NEGATION_BEFORE_RE = re.compile(
+    r"\b(?:cannot|can't|can\s+not|must\s+not|mustn't|should\s+not|shouldn't|may\s+not|will\s+not|won't"
+    r"|is\s+not|are\s+not|(?:is|are)\s+not\s+allowed\s+to|not\s+allowed\s+to|never)"
+    r"\s+(?:be\s+|have\s+|contain\s+|take\s+)?$",
+    re.IGNORECASE,
+)
+_NEGATED = {
+    "min_exclusive": ("max", "at most"),       # cannot be more than 12  -> at most 12
+    "max_exclusive": ("min", "at least"),      # cannot be less than 8   -> at least 8
+    "min": ("max_exclusive", "less than"),     # must not be at least 18 -> less than 18
+    "max": ("min_exclusive", "more than"),     # must not be at most 2   -> more than 2
+}
+
+PREFIX_RE = _PREFIX_RE   # public: templates use it to cut the limit out of an action phrase
+
 # Qualifiers written after the number or unit: "8 or more characters".
 _POSTFIX_RE = re.compile(
     r"\s*(?:or|and)\s+(?:(?P<min>more|greater|longer|above|higher|over|up)"
@@ -189,6 +206,9 @@ def extract_limits(criterion: str) -> List[Limit]:
         phrase = text[start:end].strip()
         if prefix and re.match(r"(?:not|never)\s+exceed", prefix.group(0), re.IGNORECASE):
             phrase = "at most " + text[match.start():end].strip()
+        elif prefix and relation in _NEGATED and _NEGATION_BEFORE_RE.search(text[:prefix.start()]):
+            relation, qualifier = _NEGATED[relation]
+            phrase = f"{qualifier} {text[match.start():end].strip()}"
 
         value = _to_decimal(match["num"])
         unit = _plural(unit)

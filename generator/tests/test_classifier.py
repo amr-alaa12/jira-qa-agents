@@ -89,3 +89,63 @@ def test_real_model_classifies_the_example_criteria():
     ])
     assert [category for category, _ in predictions] == ["boundary", "performance"]
     assert all(0 < confidence <= 1 for _, confidence in predictions)
+
+
+# --- classifier audit (11 Nov 2026) --------------------------------------------------------
+
+from generator.classifier import clean_criterion  # noqa: E402
+
+
+@pytest.mark.parametrize("raw, cleaned", [
+    ("AC1: The page loads fast", "The page loads fast"),
+    ("1. The password is hashed", "The password is hashed"),
+    ("-   Only admins   can delete", "Only admins can delete"),
+    ("[ ] Users can export", "Users can export"),
+    ("Version 2 is shown", "Version 2 is shown"),
+])
+def test_jira_list_markers_are_removed_before_classifying(raw, cleaned):
+    assert clean_criterion(raw) == cleaned
+
+
+class Functional(FakePipeline):
+    """Always 'functional' first, 'boundary' second."""
+
+    def predict_proba(self, sentences):
+        return [[0.3, 0.6, 0.1] for _ in sentences]
+
+
+@pytest.mark.parametrize("criterion, category", [
+    ("The reset link expires after 30 minutes", "boundary"),      # a time window is a limit
+    ("A discount cannot exceed 70% of the price", "boundary"),
+    ("The page loads in under 2 seconds", "functional"),           # speed: left to the model
+    ("The user receives a reset link by email", "functional"),     # no limit
+])
+def test_numeric_limits_turn_functional_into_boundary(criterion, category):
+    predicted, confidence = CategoryModel(Functional()).predict([criterion])[0]
+    assert predicted == category
+    assert confidence == (0.3 if category == "boundary" else 0.6)   # always the model's own probability
+
+
+def test_limit_rule_never_overrides_other_categories():
+    assert CategoryModel(FakePipeline()).predict(["Only admins can delete 5 products"])[0][0] == "security"
+
+
+@pytest.mark.skipif(not MODEL_PATH.is_file(), reason="model/model.pkl not trained")
+def test_trained_model_keeps_the_words_that_decide_the_category():
+    import joblib
+    pipeline = joblib.load(MODEL_PATH)
+    words = dict(pipeline.named_steps["features"].transformer_list)["words"]
+    assert words.stop_words is None   # "only", "not", "at least", "within" ... must reach the model
+    assert {"only", "not", "least", "within"} <= set(words.vocabulary_)
+    assert {"%", "$", "8"} <= set(words.build_analyzer()("at most 8 characters, 80% or $50"))
+
+
+@pytest.mark.skipif(not MODEL_PATH.is_file(), reason="model/model.pkl not trained")
+def test_trained_model_on_the_jira_benchmark():
+    import csv
+    from pathlib import Path
+    rows = list(csv.DictReader((Path(MODEL_PATH).parent.parent / "data" / "jira_benchmark.csv").open(encoding="utf-8")))
+    predictions = CategoryModel.load().predict([row["text"] for row in rows])
+    accuracy = sum(p[0] == row["category"] for p, row in zip(predictions, rows)) / len(rows)
+    assert accuracy >= 0.83, accuracy      # 0.858 when trained; the old model scored 0.808
+    assert CategoryModel.load().predict(["Only admins can delete products"])[0][0] == "security"

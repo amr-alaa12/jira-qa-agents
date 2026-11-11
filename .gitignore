@@ -153,8 +153,8 @@ __marimo__/
 /stories.json
 /test_cases.json
 
-# Generated trained model
-/model/model.pkl
+# Generated test cases
+/generator/test_cases.json
 
 # Operating system files
 .DS_Store

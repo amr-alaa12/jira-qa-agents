@@ -1,0 +1,121 @@
+text,category
+"Given I have items in my cart, when I click Checkout, then the order summary page is shown",functional
+"Given I am logged in, when I click Log out, then I am returned to the home page",functional
+When I add a product to the wishlist then it appears in my wishlist,functional
+The user receives a confirmation email after placing an order,functional
+"Given a new message arrives, when I open the inbox, then the message is listed at the top",functional
+I can download my invoice as a PDF from the order page,functional
+The system sends a reminder notification one day before the appointment,functional
+"Given I submit a support ticket, then a ticket number is shown to me",functional
+"When the admin approves a refund, the customer's balance is updated",functional
+Search results are sorted by relevance by default,functional
+"Given a product is out of stock, when I view it, then the Add to cart button is disabled",functional
+Users can filter the order history by status,functional
+"When I cancel my subscription, then no further payments are taken",functional
+The dashboard shows the total sales for the current month,functional
+"Given I reply STOP, then I am removed from the mailing list",functional
+Deleted items are moved to the trash and can be restored,functional
+"When I change the language to Arabic, then all menus are shown in Arabic",functional
+The system creates an audit entry every time a record is edited,functional
+"Given the payment succeeds, when the order is confirmed, then the stock count is reduced",functional
+I can upload a profile picture from my phone gallery,functional
+The email field must contain an @ sign and a domain,validation
+"Given I leave the phone number empty, when I submit the form, then a required-field error is shown",validation
+The date of birth must be a valid date in the format DD/MM/YYYY,validation
+"When I enter letters in the quantity field, then an error message asks for a number",validation
+The postal code accepts digits only,validation
+The confirm-password field must match the password field,validation
+"Given I enter an email that is already registered, when I sign up, then I am told the email is in use",validation
+The username cannot contain spaces or special characters,validation
+"When the card number fails the checksum, the payment form shows an invalid card error",validation
+All mandatory fields are marked and the form cannot be submitted while any of them is empty,validation
+The website URL must start with http:// or https://,validation
+"Given I paste text with leading spaces into the name field, then the spaces are trimmed before saving",validation
+Uploaded files must be JPG or PNG images,validation
+The IBAN is checked for the correct country format before the transfer is sent,validation
+"When I type an invalid time such as 25:70, the field is highlighted in red",validation
+The coupon code is rejected if it does not exist,validation
+A duplicate username is not accepted during registration,validation
+The national ID field accepts only numeric characters,validation
+"Given the start date is after the end date, when I save the booking, then an error is shown",validation
+The search box ignores input that contains only spaces,validation
+The password must be at least 8 characters long,boundary
+The comment box accepts up to 500 characters,boundary
+Users can upload a maximum of 5 files per message,boundary
+The account is locked after 3 failed login attempts,boundary
+The quantity must be between 1 and 99,boundary
+Orders over $50 get free shipping,boundary
+The reset link expires after 30 minutes,boundary
+"Given the cart has more than 20 items, when I add one more, then a limit message is shown",boundary
+The display name cannot be longer than 12 characters,boundary
+A discount cannot exceed 70% of the item price,boundary
+The PIN must be exactly 4 digits,boundary
+Customers can cancel an order within 24 hours of placing it,boundary
+The file size limit for attachments is 10 MB,boundary
+A user can have no more than 3 active sessions,boundary
+Passengers must be at least 18 years old to book alone,boundary
+The rating must be a whole number from 1 to 5,boundary
+The free trial ends after 14 days,boundary
+"When the balance drops below $10, a low-balance warning is sent",boundary
+A team can have at most 10 members,boundary
+The username must be between 4 and 20 characters,boundary
+Only administrators can delete user accounts,security
+"Given I am not logged in, when I open the order history, then I am redirected to the login page",security
+Passwords are stored hashed and never in plain text,security
+Users cannot view orders that belong to other users,security
+All traffic between the app and the server uses HTTPS,security
+The session expires after the user logs out,security
+A user without the editor role cannot publish articles,security
+"Given my account is deactivated, when I try to log in, then access is denied",security
+Two-factor authentication is required for administrator accounts,security
+Credit card numbers are masked except for the last four digits,security
+API requests without a valid token are rejected with HTTP 401,security
+"Only the owner of a document can share it with others",security
+Personal data is deleted when the user closes the account,security
+The login form does not reveal whether the email or the password was wrong,security
+Admin pages are not visible to regular users,security
+"Given someone tampers with the URL, when they request another customer's invoice, then access is forbidden",security
+Uploaded files are scanned for malware before they are stored,security
+User actions on payment data are recorded in a security log,security
+Guests cannot post comments,security
+Access tokens are encrypted at rest,security
+The home page loads in under 2 seconds,performance
+Search results appear within 1 second for 95% of queries,performance
+The system supports 1000 concurrent users without errors,performance
+"Given 500 users are online, when they place orders, then each order is confirmed within 3 seconds",performance
+The report export finishes in less than 10 seconds for a year of data,performance
+The API responds within 300 ms under normal load,performance
+Images are compressed so that the product page stays fast on 3G,performance
+The checkout page remains responsive during peak sales,performance
+The mobile app starts in under 3 seconds on a mid-range phone,performance
+Dashboard charts refresh every 5 seconds without freezing the page,performance
+The system processes 200 payments per minute,performance
+Uploading a 10 MB file takes no longer than 15 seconds,performance
+The database query for the order list takes less than 500 ms,performance
+"When traffic doubles, the response time stays below 2 seconds",performance
+The page does not slow down when the product list has 10000 items,performance
+Notifications are delivered within 5 seconds of the event,performance
+Login takes less than one second,performance
+The app keeps working smoothly with 50 open tabs,performance
+Video playback starts within 2 seconds,performance
+Autocomplete suggestions appear as the user types without delay,performance
+The checkout can be completed with the keyboard only,usability
+Error messages explain in plain words what went wrong and how to fix it,usability
+The app works on phones and tablets without horizontal scrolling,usability
+All images have alternative text for screen readers,usability
+"Given I am a first-time user, when I open the app, then a short tour explains the main features",usability
+Buttons are large enough to tap easily on a phone,usability
+The interface is available in English and Arabic,usability
+Text has enough contrast to be read in bright sunlight,usability
+The user can complete a purchase in no more than three screens,usability
+Icons have labels so that their meaning is clear,usability
+The form keeps the entered data if the user goes back,usability
+A progress bar shows how far the user is in the sign-up steps,usability
+The layout adapts to right-to-left languages,usability
+Help tips appear next to fields that are often filled in wrongly,usability
+The main menu is reachable from every page,usability
+The font size can be increased without breaking the layout,usability
+Success messages confirm clearly that the action worked,usability
+The search page remembers the user's last filters,usability
+Links look different from normal text,usability
+Focus moves to the first error when a form is submitted with mistakes,usability
