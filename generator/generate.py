@@ -5,7 +5,7 @@ Usage (from the repository root):
     python generator/generate.py examples/stories.json --output generator/test_cases.json
     python generator/generate.py examples/stories.json --categories generator/categories.json
 
-By default the AI model (model/model.pkl, trained by model/train_and_predict.py)
+By default the AI model (model/model.pkl, trained by model/train_new_model.py)
 picks the category of every acceptance criterion. With --categories, the
 categories come from a JSON file instead, for example {"SHOP-1": ["functional", "boundary"]}.
 """
@@ -71,7 +71,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 def _print_predictions(stories: List[Any], categories: Mapping[str, Sequence[Any]]) -> None:
     """Show what the AI model chose, so a wrong category is easy to spot."""
     for story in stories:
-        for criterion, (category, confidence) in zip(story["acceptance_criteria"], categories[story["key"]]):
+        for criterion, (category, confidence) in zip(story.get("acceptance_criteria", []), categories[story["key"]]):
             note = "  <- low confidence, please check" if confidence < LOW_CONFIDENCE else ""
             print(f"{story['key']}: {criterion.strip()} -> {category} ({confidence:.2f}){note}")
 

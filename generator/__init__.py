@@ -1,4 +1,4 @@
-"""Test Case Generator (Member 4).
+"""Test Case Generator.
 
     from generator import generate_with_model
     test_cases = generate_with_model(stories)       # categories from the AI model

@@ -59,7 +59,7 @@ STORIES = {
 def assert_agreed_format(test_case):
     """The format agreed at kickoff (examples/test_cases.json)."""
     assert tuple(test_case) == TEST_CASE_FIELDS
-    for field in ("story_key", "id", "title", "type", "input", "expected"):
+    for field in ("story_key", "id", "title", "type", "input", "expected_output"):
         assert isinstance(test_case[field], str) and test_case[field].strip(), field
     assert test_case["type"] in CATEGORIES
     assert isinstance(test_case["steps"], list) and test_case["steps"]
@@ -125,8 +125,8 @@ def test_boundary_uses_the_number_in_the_criterion():
         'Enter "Passw0r" (7 characters) in the new password field',
         "Submit the form",
     ]
-    assert "rejected" in boundary[0]["expected"] and "at least 8 characters" in boundary[0]["expected"]
-    assert "form is submitted" in boundary[1]["expected"]
+    assert "rejected" in boundary[0]["expected_output"] and "at least 8 characters" in boundary[0]["expected_output"]
+    assert "form is submitted" in boundary[1]["expected_output"]
     assert [tc["input"] for tc in boundary] == [
         'New password: "Passw0r" (7 characters)',
         'New password: "Passw0rd" (8 characters)',
@@ -192,7 +192,7 @@ def test_security_has_an_allowed_and_a_blocked_user():
         "Administrator can delete products",
         "Regular user (not an administrator) cannot delete products",
     ]
-    assert "denied" in test_cases[1]["expected"]
+    assert "denied" in test_cases[1]["expected_output"]
     assert test_cases[0]["input"] == "User: administrator (admin@example.com)"
     assert test_cases[1]["steps"][0] == "Log in as a regular user (not an administrator) (user@example.com)"
 
@@ -211,9 +211,10 @@ def test_functional_uses_concrete_values():
         'Email address: "" (empty)',
     ]
     assert test_cases[0]["steps"][1] == 'Enter the registered email address "registered.user@example.com"'
-    assert test_cases[0]["expected"] == "A confirmation message is shown and the user receives a reset link by email"
-    assert "validation error" in test_cases[1]["expected"]
-    assert "required-field message" in test_cases[2]["expected"]
+    assert test_cases[0]["expected_output"] == (
+        "A confirmation message is shown and the user receives a reset link by email")
+    assert "validation error" in test_cases[1]["expected_output"]
+    assert "required-field message" in test_cases[2]["expected_output"]
 
 
 def test_functional_without_a_known_field_splits_wrong_and_empty():
@@ -229,7 +230,7 @@ def test_functional_without_a_known_field_splits_wrong_and_empty():
 def test_performance_uses_the_time_limit():
     story = dict(LOGIN, acceptance_criteria=["The login page loads in under 2 seconds"])
     test_cases = generate_test_cases(story, ["performance"])
-    assert test_cases[0]["expected"] == "Every measurement is under 2 seconds"
+    assert test_cases[0]["expected_output"] == "Every measurement is under 2 seconds"
     assert "100 concurrent users" in test_cases[1]["title"]
 
 

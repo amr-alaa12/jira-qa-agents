@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -7,9 +8,25 @@ sys.path.insert(0, str(ROOT))
 
 import streamlit as st
 
-from model.train_and_predict import predict_category
-from generator.core import generate_test_cases
+from generator import CategoryModel, generate_test_cases
 from jira.fetch import fetch_stories
+
+JIRA_PROJECT_KEY = os.getenv("JIRA_PROJECT_KEY", "KAN")
+
+
+@st.cache_resource(show_spinner="Loading the classifier...")
+def load_model():
+    """Load model/model.pkl once per server process, from any working directory."""
+    return CategoryModel.load()
+
+
+@st.cache_data(ttl=300, show_spinner="Loading Jira stories...")
+def load_jira_stories(project_key):
+    """Call Jira at most once every 5 minutes. Failures are remembered too, so an outage stays fast."""
+    try:
+        return fetch_stories(project_key), None
+    except Exception as error:
+        return [], str(error)
 
 st.set_page_config(page_title="Jira QA Agents", page_icon="🧪", layout="wide")
 
@@ -21,8 +38,8 @@ st.markdown(
         --muted: #5e6c7d;
         --line: #e3e8ef;
         --surface: #ffffff;
-    --accent: #2459a6;
-    --accent-hover: #194785;
+        --accent: #2459a6;
+        --accent-hover: #194785;
     }
     .stApp { background: #f4f6f9; color: var(--ink); }
     [data-testid="stHeader"] { background: rgba(244, 246, 249, 0.96); }
@@ -115,15 +132,13 @@ def load_json_stories(path: Path):
 
 def get_stories():
     """Fetch Jira stories, with local and sample fallbacks."""
-    root = Path(__file__).resolve().parent.parent
-    try:
-        stories = fetch_stories("KAN")
-        if stories:
-            return stories, "Connected to Jira project KAN"
-    except Exception as error:
+    stories, error = load_jira_stories(JIRA_PROJECT_KEY)
+    if stories:
+        return stories, f"Connected to Jira project {JIRA_PROJECT_KEY}"
+    if error:
         st.warning(f"Could not fetch Jira stories: {error}")
 
-    for candidate in (root / "stories.json", root / "examples" / "stories.json", root / "data" / "stories.json"):
+    for candidate in (ROOT / "stories.json", ROOT / "examples" / "stories.json"):
         stories = load_json_stories(candidate)
         if stories:
             return stories, f"Loaded from {candidate.name}"
@@ -168,9 +183,12 @@ st.write(story.get("description") or "No description provided.")
 st.markdown("#### Acceptance criteria")
 st.caption("The predicted category helps determine which test cases are created.")
 
-for index, criterion in enumerate(criteria, start=1):
-    criterion = str(criterion)
-    category, confidence = predict_category(criterion)
+criteria = [str(criterion) for criterion in criteria]
+if not criteria:
+    st.info("This story has no acceptance criteria in Jira, so no test cases can be generated.")
+predictions = load_model().predict(criteria)      # [(category, confidence), ...] one per criterion
+
+for index, (criterion, (category, confidence)) in enumerate(zip(criteria, predictions), start=1):
     with st.container(border=True):
         left, right = st.columns([5, 2])
         left.write(f"**{index}.** {criterion}")
@@ -180,11 +198,10 @@ for index, criterion in enumerate(criteria, start=1):
 st.divider()
 st.markdown("### 3. Generate test cases")
 st.caption("Create test cases from this story's acceptance criteria.")
-if st.button("Generate test cases", type="primary", use_container_width=True):
+if st.button("Generate test cases", type="primary", width="stretch"):
     try:
         with st.spinner("Generating test cases..."):
-            categories = [predict_category(str(criterion)) for criterion in criteria]
-            st.session_state.generated_cases = generate_test_cases(story, categories)
+            st.session_state.generated_cases = generate_test_cases(story, predictions)
             st.session_state.generated_story_key = story["key"]
     except Exception as error:
         st.error(f"Could not generate test cases: {error}")
@@ -207,7 +224,7 @@ if generated_cases:
                 st.write(case.get("input") or "Not provided")
             with expected_col:
                 st.markdown("**Expected output**")
-                st.write(case.get("expected") or "Not provided")
+                st.write(case.get("expected_output") or "Not provided")
             st.markdown("**Steps**")
             steps = case.get("steps") or []
             if steps:
@@ -226,7 +243,8 @@ else:
     st.info("No test cases yet. Select a story, then choose **Generate test cases**.")
 
 with st.expander("About Jira QA Agents"):
-    st.write("Stories are loaded from local JSON files when available.")
-    st.write("If no local stories are found, built-in sample stories are used.")
+    st.write(f"Stories are loaded from Jira project {JIRA_PROJECT_KEY} (refreshed every 5 minutes).")
+    st.write("If Jira is unavailable, the app uses stories.json, then examples/stories.json, "
+             "then the built-in sample stories.")
     st.write("Acceptance criteria are classified using the trained requirement classifier.")
     st.write("Test cases are generated using the project's test case generator.")

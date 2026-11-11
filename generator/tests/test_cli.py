@@ -52,3 +52,15 @@ def test_wrong_top_level_shape_is_an_error(tmp_path, capsys):
     stories = write_json(tmp_path / "stories.json", {"key": "A-1"})
     assert main([stories, "--output", str(tmp_path / "out.json")]) == 1
     assert "must contain a JSON list" in capsys.readouterr().err
+
+
+def test_story_without_acceptance_criteria_does_not_crash(tmp_path):
+    """Real Jira bugs and tasks often have no acceptance_criteria key (review fix Z2)."""
+    stories = write_json(tmp_path / "stories.json", [
+        {"key": "KAN-1", "title": "Reset password", "acceptance_criteria": ["The user receives a reset link by email"]},
+        {"key": "KAN-2", "title": "Fix crash on login"},
+    ])
+    output = tmp_path / "out.json"
+    assert main([stories, "--output", str(output)]) == 0
+    test_cases = json.loads(output.read_text(encoding="utf-8"))
+    assert test_cases and all(tc["story_key"] == "KAN-1" for tc in test_cases)
