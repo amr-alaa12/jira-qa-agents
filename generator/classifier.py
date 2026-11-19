@@ -16,39 +16,41 @@ Prediction = Tuple[str, float]
 
 class SelfMadeClassifier:
     _RULES: Tuple[Tuple[str, re.Pattern], ...] = (
-        ("boundary", re.compile(
-            r"\b(?:at\s+least|at\s+most|no\s+more\s+than|not\s+more\s+than|maximum|minimum"
-            r"|between\s+\d+|from\s+\d+\s+to\s+\d+|\d+\s*-\s*\d+|exceed|limit|range"
-            r"|more\s+than\s+\d+|less\s+than\s+\d+|up\s+to\s+\d+|\d+\s*(?:characters?|digits?|items?))\b",
-            re.IGNORECASE,
-        )),
-        ("security", re.compile(
-            r"\b(?:security|auth\w*|login\w*|permissions?|roles?|admin(?:istrator)?s?|unauthorized|forbidden|encrypt\w*"
-            r"|tokens?|jwt|credentials?|passwords?|access\s+control|privileges?|injections?|xss|vulnerab\w*)\b",
-            re.IGNORECASE,
-        )),
         ("reliability", re.compile(
             r"\b(?:reliability|recover\w*|retry|retries|failover|backup|fault\w*|crash\w*|availability"
-            r"|uptime|downtime|redundanc\w*|resilien\w*|disconnect\w*)\b",
-            re.IGNORECASE,
-        )),
-        ("portability", re.compile(
-            r"\b(?:portab\w*|browser\w*|cross[\s-]platform|chrome|firefox|safari|edge|windows|linux|macos"
-            r"|android|ios|device\w*|mobile|desktop|tablet\w*)\b",
-            re.IGNORECASE,
-        )),
-        ("maintainability", re.compile(
-            r"\b(?:maintain\w*|config\w*|setting\w*|log\w*|logging|modular\w*|refactor\w*|doc\w*|document\w*"
-            r"|decoupl\w*)\b",
-            re.IGNORECASE,
-        )),
-        ("usability", re.compile(
-            r"\b(?:usab\w*|user[\s-]friendly|interface\w*|ui\b|ux\b|screen\w*|keyboard\w*|navigation|layout|help|guidance|accessib\w*)\b",
+            r"|uptime|downtime|redundanc\w*|resilien\w*|disconnect\w*|reconnect\w*|resume\w*|circuit[\s-]breaker\w*"
+            r"|fall\s*back|outage\w*|restore\w*|data[\s-]loss)\b",
             re.IGNORECASE,
         )),
         ("performance", re.compile(
             r"\b(?:performance|throughput|latency|response\s+time|load\s+time|benchmark\w*|stress|concurrent\w*"
-            r"|capacity|(?:under|within|in)\s+\d+\s*(?:seconds?|milliseconds?|ms\b))\b",
+            r"|capacity|loads?\s+in\b|requests?\s+per\s+second|(?:under|within|in)\s+\d+\s*(?:seconds?|milliseconds?|ms\b))\b",
+            re.IGNORECASE,
+        )),
+        ("boundary", re.compile(
+            r"\b(?:after\s+\d+\s+(?:consecutive\s+)?(?:failed\s+)?(?:login|auth\w*|attempts?)|after\s+\d+\s+failed"
+            r"|at\s+least|at\s+most|no\s+more\s+than|not\s+more\s+than|maximum|minimum"
+            r"|between\s+\d+|from\s+\d+\s+to\s+\d+|\d+\s*-\s*\d+|exceed|limit|range"
+            r"|more\s+than\s+\d+|less\s+than\s+\d+|over\s+\$?\d+|up\s+to\s+\d+|\d+\s*(?:characters?|digits?|items?|attempts?))\b",
+            re.IGNORECASE,
+        )),
+        ("security", re.compile(
+            r"\b(?:security|auth\w*|login\w*|logged[\s-]in|log\s*in|permissions?|roles?|admin(?:istrator)?s?|unauthorized|forbidden|encrypt\w*"
+            r"|tokens?|jwt|credentials?|passwords?|access\s+control|privileges?|unprivileged|injections?|xss|vulnerab\w*|bearer\b)\b",
+            re.IGNORECASE,
+        )),
+        ("maintainability", re.compile(
+            r"\b(?:maintain\w*|config\w*|setting\w*|\b(?:logs?|logging|loggers?)\b|modular\w*|refactor\w*|doc\w*|document\w*"
+            r"|decoupl\w*)\b",
+            re.IGNORECASE,
+        )),
+        ("portability", re.compile(
+            r"\b(?:portab\w*|browser\w*|cross[\s-]platform|cross[\s-]browser|chrome|firefox|safari|edge|operating\s+system|windows|linux|macos"
+            r"|android|ios|device\w*|mobile\s+(?:phones?|devices?|apps?)|smartphones?|tablets?|desktop|arm64|x86(?:_64)?|architectur\w*|webassembly|wasm)\b",
+            re.IGNORECASE,
+        )),
+        ("usability", re.compile(
+            r"\b(?:usab\w*|user[\s-]friendly|interface\w*|ui\b|ux\b|keyboard\w*|navigation|layout|scroll|help|guidance|accessib\w*)\b",
             re.IGNORECASE,
         )),
         ("validation", re.compile(

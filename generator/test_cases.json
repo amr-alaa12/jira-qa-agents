@@ -49,7 +49,7 @@
       "Enter \"Passw0r\" (7 characters) in the new password field",
       "Submit the form"
     ],
-    "expected": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
+    "expected": "The new password is rejected, the form is not submitted and a validation error indicates that at least 8 characters are required"
   },
   {
     "story_key": "SHOP-1",
@@ -62,7 +62,7 @@
       "Enter \"Passw0rd\" (8 characters) in the new password field",
       "Submit the form"
     ],
-    "expected": "The new password is accepted because 8 characters is within the limit (at least 8 characters), the form is submitted and a success message is shown"
+    "expected": "The new password is accepted at the exact minimum threshold (at least 8 characters), the form is submitted successfully and confirmation is shown"
   },
   {
     "story_key": "SHOP-1",
@@ -75,6 +75,6 @@
       "Enter \"Passw0rd!\" (9 characters) in the new password field",
       "Submit the form"
     ],
-    "expected": "The new password is accepted because 9 characters is within the limit (at least 8 characters), the form is submitted and a success message is shown"
+    "expected": "The new password is accepted above the minimum threshold (at least 8 characters), the form is submitted successfully and confirmation is shown"
   }
 ]

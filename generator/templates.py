@@ -256,7 +256,7 @@ def boundary(ctx: StoryContext, criterion: str) -> List[Draft]:
                 input=_boundary_input(limit, subject, quantity, value),
                 steps=(ctx.open_step, _boundary_step(limit, subject, quantity, condition, value),
                        ctx.submit_step if limit.kind == "length" else "Check the result"),
-                expected=_boundary_expected(limit, subject, quantity, inside, condition, criterion),
+                expected=_boundary_expected(limit, subject, quantity, inside, condition, criterion, value),
             ))
     return drafts
 
@@ -336,20 +336,32 @@ def _boundary_step(limit: Limit, subject: str, quantity: str, condition: bool, v
 
 
 def _boundary_expected(limit: Limit, subject: str, quantity: str, inside: bool, condition: bool,
-                       criterion: str) -> str:
+                       criterion: str, value: Decimal) -> str:
+    verb = "are" if limit.unit.endswith("s") else "is"
     if condition:
         if inside:
             return f"The rule applies: {text.lower_first(text.sentence(criterion))}"
-        return f"The rule does not apply, because {quantity} is outside the condition '{limit.phrase}'"
+        return f"The condition is not triggered: {quantity} does not meet '{limit.phrase}'"
     if limit.kind == "length":
         if inside:
-            return (f"The {subject} is accepted because {quantity} is within the limit ({limit.phrase}), "
-                    "the form is submitted and a success message is shown")
-        return (f"The {subject} is rejected, the form is not submitted and an error message "
-                f"explains the limit ({limit.phrase})")
+            if limit.low is not None and value == limit.low:
+                qualifier = f"at the exact minimum threshold ({limit.phrase})"
+            elif limit.high is not None and value == limit.high:
+                qualifier = f"at the maximum allowed limit ({limit.phrase})"
+            elif limit.low is not None and value > limit.low:
+                qualifier = f"above the minimum threshold ({limit.phrase})"
+            else:
+                qualifier = f"within the required limit ({limit.phrase})"
+            return f"The {subject} is accepted {qualifier}, the form is submitted successfully and confirmation is shown"
+        return (f"The {subject} is rejected, the form is not submitted and a validation error "
+                f"indicates that {limit.phrase} {verb} required")
     if inside:
-        return f"The {subject} is accepted because {quantity} is within the limit ({limit.phrase})"
-    return f"The {subject} is rejected and an error message explains the limit ({limit.phrase})"
+        if limit.low is not None and value == limit.low:
+            return f"The {subject} is accepted at the minimum threshold of {limit.phrase}"
+        if limit.high is not None and value == limit.high:
+            return f"The {subject} is accepted at the maximum threshold of {limit.phrase}"
+        return f"The {subject} is accepted within the allowed threshold of {limit.phrase}"
+    return f"The {subject} is rejected and an error message explains the rule: {limit.phrase}"
 
 
 def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
@@ -360,13 +372,13 @@ def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
             title=text.capitalize(f"{subject} exactly at the limit is accepted"),
             input=text.capitalize(f"{subject}: exactly at the limit"),
             steps=(ctx.open_step, f"Use the largest (or smallest) {subject} the rule allows", "Check the result"),
-            expected=f"The {subject} is accepted because it respects the rule: {statement}",
+            expected=f"The {subject} is accepted in accordance with the rule: {statement}",
         ),
         Draft(
             title=text.capitalize(f"{subject} just past the limit is rejected"),
             input=text.capitalize(f"{subject}: one step past the limit"),
             steps=(ctx.open_step, f"Use a {subject} one step past what the rule allows", "Check the result"),
-            expected=f"The {subject} is rejected and an error message explains the rule: {statement}",
+            expected=f"The {subject} is rejected and a validation error explains the rule: {statement}",
         ),
     ]
 
