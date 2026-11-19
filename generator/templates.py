@@ -96,6 +96,18 @@ _FIELD_KINDS = (
                (_Sample("abc", "that is too weak"), _Sample("        ", "made of spaces only"))),
     _FieldKind(r"quantity|amount|price|\bage\b|\bnumber\b|numeric", "number", "10",
                (_Sample("abc", "containing letters"), _Sample("-5", "that is negative"))),
+    _FieldKind(r"\bip\b|ip\s*address|ipv4|ipv6", "IP address", "192.168.1.1",
+               (_Sample("999.999.999.999", "with out-of-range octets"), _Sample("192.168.1", "with missing octets"))),
+    _FieldKind(r"domain|hostname", "domain name", "example.com",
+               (_Sample("http://example.com", "containing a protocol scheme"), _Sample("-invalid.com", "starting with a hyphen"))),
+    _FieldKind(r"ssn|social\s*security", "SSN", "123-45-6789",
+               (_Sample("123-45-678", "with too few digits"), _Sample("000-00-0000", "with an all-zero group"))),
+    _FieldKind(r"file|attachment|upload", "file upload", "document.pdf",
+               (_Sample("malicious.exe", "with an executable extension"), _Sample("oversized_file.dat", "exceeding the size limit"))),
+    _FieldKind(r"json|payload|request\s+body", "JSON payload", '{"status": "active"}',
+               (_Sample('{"status": active}', "with invalid JSON syntax"), _Sample('{"status": null}', "with an unexpected null field"))),
+    _FieldKind(r"token|jwt|api\s*key", "API token", "tok_live_9a8b7c6d5e",
+               (_Sample("tok_expired_00000", "that is expired"), _Sample("invalid.token.payload", "with a corrupted signature"))),
     _FieldKind(r"\bname\b|username", "name", "Alex Morgan",
                (_Sample("<script>alert(1)</script>", "with forbidden characters"),
                 _Sample("@@@###", "made of symbols only"))),
@@ -396,10 +408,16 @@ _ONLY_GROUP_RE = re.compile(
     re.IGNORECASE,
 )
 _PROTECTION_RE = re.compile(r"\b(?:encrypt\w*|hash\w*|https|tls|ssl|plain\s*text)\b", re.IGNORECASE)
+_INJECTION_RE = re.compile(
+    r"\b(?:injection|sqli?|xss|cross[\s-]site|sanitize|sanitiz\w*|malicious|fuzz\w*|tamper\w*|script\s+tags?)\b",
+    re.IGNORECASE,
+)
 _ANONYMOUS = "anonymous visitor (not logged in)"
 
 
 def security(ctx: StoryContext, criterion: str) -> List[Draft]:
+    if _INJECTION_RE.search(criterion):
+        return _security_injection_drafts(ctx, criterion)
     roles = _roles(criterion)
     action = text.criterion_action(criterion) or ctx.task
     drafts = [
@@ -426,6 +444,33 @@ def security(ctx: StoryContext, criterion: str) -> List[Draft]:
             expected="Traffic uses HTTPS and the sensitive data is stored only in encrypted or hashed form",
         ))
     return drafts
+
+
+def _security_injection_drafts(ctx: StoryContext, criterion: str) -> List[Draft]:
+    target = text.subject(criterion) or "input field"
+    return [
+        Draft(
+            title=text.capitalize(f"SQL injection probe in {target} is sanitized and neutralized"),
+            input=f'{text.capitalize(target)}: "\' OR \'1\'=\'1 --"',
+            steps=(ctx.open_step, f'Enter SQL injection probe "\' OR \'1\'=\'1 --" in the {target}', ctx.submit_step),
+            expected=("The input is safely sanitized or parameterized, database execution is not altered, "
+                      "and no database error or unauthorized data is exposed"),
+        ),
+        Draft(
+            title=text.capitalize(f"Cross-site scripting (XSS) probe in {target} is escaped"),
+            input=f'{text.capitalize(target)}: "<script>alert(1)</script>"',
+            steps=(ctx.open_step, f'Enter XSS probe "<script>alert(1)</script>" in the {target}', ctx.submit_step),
+            expected=("The payload is HTML-escaped, no scripts execute in the browser context, "
+                      "and output is rendered safely as plain text"),
+        ),
+        Draft(
+            title=text.capitalize(f"Legitimate input with special characters in {target} is accepted"),
+            input=f'{text.capitalize(target)}: "O\'Connor & Sons <tech>"',
+            steps=(ctx.open_step, f'Enter valid input with quotes and brackets "O\'Connor & Sons <tech>" in the {target}', ctx.submit_step),
+            expected=f"The {target} is accepted without error and displayed accurately",
+        ),
+    ]
+
 
 
 def _roles(criterion: str) -> _Roles:

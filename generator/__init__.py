@@ -8,7 +8,7 @@ from .core import (
     generate_for_stories,
     generate_test_cases,
 )
-from .export import to_csv, to_excel, to_gherkin_feature, to_xray_json
+from .export import to_csv, to_cypress_ts, to_excel, to_gherkin_feature, to_playwright_python, to_xray_json
 from .text import to_gherkin
 
 __all__ = [
@@ -23,8 +23,10 @@ __all__ = [
     "generate_test_cases",
     "generate_with_model",
     "to_csv",
+    "to_cypress_ts",
     "to_excel",
     "to_gherkin",
     "to_gherkin_feature",
+    "to_playwright_python",
     "to_xray_json",
 ]

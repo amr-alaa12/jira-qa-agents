@@ -11,7 +11,16 @@ REPO_ROOT = GENERATOR_DIR.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from generator import CategoryModel, generate_for_stories, to_csv, to_excel, to_gherkin_feature, to_xray_json
+from generator import (
+    CategoryModel,
+    generate_for_stories,
+    to_csv,
+    to_cypress_ts,
+    to_excel,
+    to_gherkin_feature,
+    to_playwright_python,
+    to_xray_json,
+)
 from generator.classifier import LOW_CONFIDENCE, MODEL_PATH
 
 
@@ -29,7 +38,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="include optional attributes (priority, preconditions, execution_type, gherkin)")
     parser.add_argument("--deduplicate", action="store_true",
                         help="deduplicate redundant test cases across criteria")
-    parser.add_argument("--format", choices=["json", "csv", "excel", "gherkin", "xray"], default="json",
+    parser.add_argument("--format", choices=["json", "csv", "excel", "gherkin", "xray", "playwright", "cypress"], default="json",
                         help="output format (default: json)")
     args = parser.parse_args(argv)
 
@@ -68,6 +77,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             output.write_text(to_gherkin_feature(feature_story, test_cases), encoding="utf-8")
         elif args.format == "xray":
             output.write_text(to_xray_json(test_cases) + "\n", encoding="utf-8")
+        elif args.format == "playwright":
+            feature_story = stories[0] if len(stories) == 1 else {"title": "Test Suite", "key": "SUITE"}
+            output.write_text(to_playwright_python(feature_story, test_cases), encoding="utf-8")
+        elif args.format == "cypress":
+            feature_story = stories[0] if len(stories) == 1 else {"title": "Test Suite", "key": "SUITE"}
+            output.write_text(to_cypress_ts(feature_story, test_cases), encoding="utf-8")
     except OSError as error:
         print(f"Error: cannot write {output}: {error.strerror}", file=sys.stderr)
         return 1

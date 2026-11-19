@@ -2,7 +2,7 @@
 
 Takes a user story, categorizes each acceptance criterion across 9 requirement categories, and produces structured test cases. Each test case states its concrete input, steps, and expected output.
 
-**Input -> output:** `stories.json` -> 9 categories -> `test_cases.json` / CSV / Excel / Gherkin / Xray
+**Input -> output:** `stories.json` -> 9 categories -> `test_cases.json` / CSV / Excel / Gherkin / Xray / Playwright / Cypress
 
 ## Standard Test Case Format
 
@@ -55,6 +55,8 @@ python generator/generate.py examples/stories.json --format csv --output test_ca
 python generator/generate.py examples/stories.json --format excel --output test_cases.xlsx
 python generator/generate.py examples/stories.json --format gherkin --output test_cases.feature
 python generator/generate.py examples/stories.json --format xray --output xray_tests.json
+python generator/generate.py examples/stories.json --format playwright --output test_spec.py
+python generator/generate.py examples/stories.json --format cypress --output test_spec.cy.ts
 ```
 
 ## Use it from code
@@ -79,12 +81,14 @@ test_cases = generate_test_cases(
 Exporting to various formats:
 
 ```python
-from generator import to_csv, to_excel, to_gherkin_feature, to_xray_json
+from generator import to_csv, to_cypress_ts, to_excel, to_gherkin_feature, to_playwright_python, to_xray_json
 
 csv_string = to_csv(test_cases)
 to_excel(test_cases, "test_cases.xlsx")
 gherkin_feature = to_gherkin_feature(story, test_cases)
 xray_payload = to_xray_json(test_cases)
+playwright_code = to_playwright_python(story, test_cases)
+cypress_code = to_cypress_ts(story, test_cases)
 ```
 
 To generate for multiple stories:

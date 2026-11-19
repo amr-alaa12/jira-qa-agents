@@ -152,3 +152,43 @@ def to_gherkin(test_case: Mapping[str, Any]) -> str:
                 lines.append(f"  And {capitalize(step)}")
     lines.append(f"  Then {capitalize(expected)}")
     return "\n".join(lines)
+
+
+_CONDITION_PREFIX_RE = re.compile(
+    r"^(?:given|assuming|provided\s+that)\s+(?P<cond>[^,.;]+)",
+    re.IGNORECASE,
+)
+_WHEN_IF_RE = re.compile(
+    r"^(?:when|if|in\s+case)\s+(?P<cond>[^,.;]+?)(?:,\s*|\s+then\s+)",
+    re.IGNORECASE,
+)
+_AFTER_EVENT_RE = re.compile(
+    r"\bafter\s+(?P<cond>\d+\s+[^,.;]+)",
+    re.IGNORECASE,
+)
+
+
+def extract_condition_precondition(criterion: str) -> Optional[str]:
+    sent = sentence(criterion)
+    match = _CONDITION_PREFIX_RE.search(sent) or _WHEN_IF_RE.search(sent) or _AFTER_EVENT_RE.search(sent)
+    if not match:
+        return None
+    raw_cond = match.group("cond").strip()
+    return format_precondition_clause(raw_cond)
+
+
+def format_precondition_clause(clause: str) -> str:
+    cleaned = sentence(clause).strip()
+    lowered = cleaned.lower()
+    if lowered.startswith("already logged in"):
+        cleaned = re.sub(r"^already\s+", "User is ", cleaned, flags=re.IGNORECASE)
+    elif lowered.startswith("logged in"):
+        cleaned = "User is " + cleaned
+    elif re.match(r"^(?:the|an?)\s+", lowered):
+        cleaned = strip_article(cleaned)
+    if re.search(r"^\d+\s+failed", cleaned, re.IGNORECASE):
+        cleaned = f"{cleaned} have occurred"
+    elif not re.search(r"\b(?:is|are|was|were|has|have|had|exceeds?|reaches?|falls?|occurs?|fails?)\b", cleaned, re.IGNORECASE):
+        cleaned = f"{cleaned} is active"
+    return capitalize(cleaned)
+

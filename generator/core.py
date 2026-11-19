@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
+from . import text
 from .templates import TEMPLATES, StoryContext
 from .text import to_gherkin
 
@@ -49,7 +50,7 @@ def generate_test_cases(story: Mapping[str, Any],
             if include_optional:
                 is_negative = "rejected" in draft.title.lower() or "denied" in draft.title.lower()
                 tc["priority"] = draft.priority or _default_priority(category, is_negative)
-                tc["preconditions"] = list(draft.preconditions) if draft.preconditions else _default_preconditions(context, category)
+                tc["preconditions"] = list(draft.preconditions) if draft.preconditions else _default_preconditions(context, category, criterion)
                 tc["execution_type"] = draft.execution_type or _default_execution_type(category)
                 tc["gherkin"] = to_gherkin(tc)
             test_cases.append(tc)
@@ -116,19 +117,24 @@ def _default_priority(category: str, is_negative: bool) -> str:
     return "Low"
 
 
-def _default_preconditions(context: StoryContext, category: str) -> List[str]:
+def _default_preconditions(context: StoryContext, category: str, criterion: str = "") -> List[str]:
     feature = context.feature_name
+    extracted = text.extract_condition_precondition(criterion) if criterion else None
     if category == "security":
-        return ["User accounts with configured permission roles exist", f"{feature} service is online"]
-    if category == "performance":
-        return [f"{feature} is deployed in the test environment", "Load injection harness is operational"]
-    if category == "reliability":
-        return [f"{feature} is operational under standard baseline conditions", "Fault injection tools are ready"]
-    if category == "portability":
-        return [f"{feature} is deployed and accessible across target client environments"]
-    if category == "maintainability":
-        return [f"Source code repository and component boundaries for {feature} are available"]
-    return [f"User is on the {feature} page with active connectivity"]
+        base = ["User accounts with configured permission roles exist", f"{feature} service is online"]
+    elif category == "performance":
+        base = [f"{feature} is deployed in the test environment", "Load injection harness is operational"]
+    elif category == "reliability":
+        base = [f"{feature} is operational under standard baseline conditions", "Fault injection tools are ready"]
+    elif category == "portability":
+        base = [f"{feature} is deployed and accessible across target client environments"]
+    elif category == "maintainability":
+        base = [f"Source code repository and component boundaries for {feature} are available"]
+    else:
+        base = [f"User is on the {feature} page with active connectivity"]
+    if extracted and extracted not in base:
+        return [extracted] + base
+    return base
 
 
 def _default_execution_type(category: str) -> str:

@@ -3,8 +3,9 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 from pathlib import Path
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 from .text import to_gherkin
 
@@ -138,3 +139,176 @@ def to_xray_json(test_cases: Sequence[Mapping[str, Any]]) -> str:
             "steps": steps,
         })
     return json.dumps({"tests": tests}, indent=2)
+
+
+def to_playwright_python(story_or_cases: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+                         test_cases: Optional[Sequence[Mapping[str, Any]]] = None) -> str:
+    if test_cases is None and isinstance(story_or_cases, Sequence):
+        cases = story_or_cases
+    else:
+        cases = test_cases or []
+
+    lines = [
+        "from __future__ import annotations",
+        "",
+        "import pytest",
+        "from playwright.sync_api import Page, expect",
+        "",
+    ]
+    for tc in cases:
+        tc_id = str(tc.get("id") or "TC").replace("-", "_").lower()
+        title = str(tc.get("title") or "test_case")
+        safe_title = re.sub(r"[^a-zA-Z0-9_]+", "_", title).strip("_").lower()
+        fn_name = f"test_{tc_id}_{safe_title}"
+        if len(fn_name) > 80:
+            fn_name = fn_name[:80].rstrip("_")
+
+        category = str(tc.get("type") or "functional")
+        input_desc = str(tc.get("input") or "")
+        expected_desc = str(tc.get("expected") or "")
+
+        lines.append(f"def {fn_name}(page: Page) -> None:")
+        lines.append(f'    """{title}')
+        lines.append(f"    Category: {category}")
+        lines.append(f"    Input: {input_desc}")
+        lines.append(f"    Expected: {expected_desc}")
+        lines.append('    """')
+
+        steps = list(tc.get("steps") or [])
+        for step in steps:
+            for code_line in _step_to_playwright(str(step)):
+                lines.append(f"    {code_line}")
+
+        for code_line in _expected_to_playwright(expected_desc):
+            lines.append(f"    {code_line}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _step_to_playwright(step: str) -> List[str]:
+    m_open = re.match(r"^open\s+the\s+(?P<page>.+)$", step, re.IGNORECASE)
+    if m_open:
+        slug = re.sub(r"[^a-z0-9]+", "-", m_open.group("page").lower()).strip("-")
+        return [f'page.goto("/{{{slug}}}")']
+
+    m_fill = re.match(r'^enter\s+(?:the\s+registered\s+\w+\s+|the\s+valid\s+\w+\s+|the\s+\w+\s+)?(?:input\s+|probe\s+)?["\'](?P<val>[^"\']+)["\']\s+in\s+the\s+(?P<fld>.+?)(?:\s+field)?$', step, re.IGNORECASE)
+    if m_fill:
+        fld = re.sub(r"[^a-z0-9]+", "-", m_fill.group("fld").lower()).strip("-")
+        val = m_fill.group("val").replace("\\", "\\\\").replace('"', '\\"')
+        return [f'page.locator(\'[name="{fld}"], [data-testid="{fld}"]\').fill("{val}")']
+
+    m_empty = re.match(r"^leave\s+(?:the\s+)?(?P<fld>.+?)(?:\s+field)?\s+empty$", step, re.IGNORECASE)
+    if m_empty:
+        fld = re.sub(r"[^a-z0-9]+", "-", m_empty.group("fld").lower()).strip("-")
+        return [f'page.locator(\'[name="{fld}"], [data-testid="{fld}"]\').fill("")']
+
+    m_login = re.match(r"^log\s+in\s+as\s+[^(]+\((?P<email>[^)]+)\)$", step, re.IGNORECASE)
+    if m_login:
+        email = m_login.group("email").strip()
+        return [
+            f'page.locator(\'[name="email"], input[type="email"]\').fill("{email}")',
+            'page.locator(\'button[type="submit"]\').click()',
+        ]
+
+    m_click = re.match(r"^click\s+(?P<btn>.+)$", step, re.IGNORECASE)
+    if m_click:
+        btn = m_click.group("btn").strip()
+        return [f'page.get_by_role("button", name="{btn}").click()']
+
+    if re.search(r"\bsubmit\b", step, re.IGNORECASE):
+        return ['page.locator(\'button[type="submit"], [data-testid="submit"]\').click()']
+
+    return ['page.wait_for_timeout(100)']
+
+
+def _expected_to_playwright(expected: str) -> List[str]:
+    lowered = expected.lower()
+    if any(k in lowered for k in ("reject", "error", "denied", "blocked", "not submitted", "invalid")):
+        return ['expect(page.locator(".error, [role=\'alert\'], .validation-message")).to_be_visible()']
+    if any(k in lowered for k in ("accept", "success", "confirm", "granted", "submitted")):
+        return ['expect(page.locator(".success, [role=\'status\'], .confirmation")).to_be_visible()']
+    clean = re.sub(r'["\']', '', expected[:35]).strip()
+    return [f'expect(page.locator("body")).to_contain_text("{clean}")']
+
+
+def to_cypress_ts(story_or_cases: Union[Mapping[str, Any], Sequence[Mapping[str, Any]]],
+                 test_cases: Optional[Sequence[Mapping[str, Any]]] = None) -> str:
+    if test_cases is None and isinstance(story_or_cases, Sequence):
+        story: Mapping[str, Any] = {"key": "SUITE", "title": "Automated Test Suite"}
+        cases = story_or_cases
+    else:
+        story = story_or_cases if isinstance(story_or_cases, Mapping) else {}
+        cases = test_cases or []
+
+    story_key = str(story.get("key") or "SUITE")
+    story_title = str(story.get("title") or "Feature Test Suite")
+
+    lines = [
+        f"describe('{story_key}: {story_title}', () => {{",
+    ]
+    for tc in cases:
+        tc_id = str(tc.get("id") or "TC")
+        title = str(tc.get("title") or "test case").replace("'", "\\'")
+        lines.append(f"  it('{tc_id}: {title}', () => {{")
+
+        steps = list(tc.get("steps") or [])
+        for step in steps:
+            for code_line in _step_to_cypress(str(step)):
+                lines.append(f"    {code_line}")
+
+        expected_desc = str(tc.get("expected") or "")
+        for code_line in _expected_to_cypress(expected_desc):
+            lines.append(f"    {code_line}")
+        lines.append("  });")
+        lines.append("")
+
+    lines.append("});")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _step_to_cypress(step: str) -> List[str]:
+    m_open = re.match(r"^open\s+the\s+(?P<page>.+)$", step, re.IGNORECASE)
+    if m_open:
+        slug = re.sub(r"[^a-z0-9]+", "-", m_open.group("page").lower()).strip("-")
+        return [f'cy.visit("/{{{slug}}}");']
+
+    m_fill = re.match(r'^enter\s+(?:the\s+registered\s+\w+\s+|the\s+valid\s+\w+\s+|the\s+\w+\s+)?(?:input\s+|probe\s+)?["\'](?P<val>[^"\']+)["\']\s+in\s+the\s+(?P<fld>.+?)(?:\s+field)?$', step, re.IGNORECASE)
+    if m_fill:
+        fld = re.sub(r"[^a-z0-9]+", "-", m_fill.group("fld").lower()).strip("-")
+        val = m_fill.group("val").replace("\\", "\\\\").replace("'", "\\'")
+        return [f'cy.get(\'[name="{fld}"], [data-testid="{fld}"]\').type(\'{val}\');']
+
+    m_empty = re.match(r"^leave\s+(?:the\s+)?(?P<fld>.+?)(?:\s+field)?\s+empty$", step, re.IGNORECASE)
+    if m_empty:
+        fld = re.sub(r"[^a-z0-9]+", "-", m_empty.group("fld").lower()).strip("-")
+        return [f'cy.get(\'[name="{fld}"], [data-testid="{fld}"]\').clear();']
+
+    m_login = re.match(r"^log\s+in\s+as\s+[^(]+\((?P<email>[^)]+)\)$", step, re.IGNORECASE)
+    if m_login:
+        email = m_login.group("email").strip()
+        return [
+            f'cy.get(\'[name="email"], input[type="email"]\').type(\'{email}\');',
+            'cy.get(\'button[type="submit"]\').click();',
+        ]
+
+    m_click = re.match(r"^click\s+(?P<btn>.+)$", step, re.IGNORECASE)
+    if m_click:
+        btn = m_click.group("btn").strip().replace("'", "\\'")
+        return [f'cy.contains("button", \'{btn}\').click();']
+
+    if re.search(r"\bsubmit\b", step, re.IGNORECASE):
+        return ['cy.get(\'button[type="submit"], [data-testid="submit"]\').click();']
+
+    return ['cy.wait(100);']
+
+
+def _expected_to_cypress(expected: str) -> List[str]:
+    lowered = expected.lower()
+    if any(k in lowered for k in ("reject", "error", "denied", "blocked", "not submitted", "invalid")):
+        return ['cy.get(".error, [role=\'alert\'], .validation-message").should("be.visible");']
+    if any(k in lowered for k in ("accept", "success", "confirm", "granted", "submitted")):
+        return ['cy.get(".success, [role=\'status\'], .confirmation").should("be.visible");']
+    clean = re.sub(r'["\']', '', expected[:35]).strip()
+    return [f'cy.get("body").should("contain.text", "{clean}");']
+

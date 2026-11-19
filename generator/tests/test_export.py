@@ -12,9 +12,11 @@ from generator import (
     deduplicate_test_cases,
     generate_test_cases,
     to_csv,
+    to_cypress_ts,
     to_excel,
     to_gherkin,
     to_gherkin_feature,
+    to_playwright_python,
     to_xray_json,
 )
 from generator.generate import main
@@ -123,3 +125,95 @@ def test_cli_optional_and_export_formats(tmp_path: Path):
     code = main([str(stories_file), "--categories", str(categories_file), "--output", str(xlsx_out), "--format", "excel"])
     assert code == 0
     assert xlsx_out.exists() and xlsx_out.stat().st_size > 0
+
+
+def test_to_playwright_python():
+    test_cases = generate_test_cases(STORY, ["functional", "boundary"])
+    code = to_playwright_python(STORY, test_cases)
+    assert "from playwright.sync_api import Page, expect" in code
+    assert "def test_shop_1_tc1_" in code
+    assert "page.goto" in code
+    assert "expect(page.locator" in code
+
+
+def test_to_cypress_ts():
+    test_cases = generate_test_cases(STORY, ["functional", "boundary"])
+    code = to_cypress_ts(STORY, test_cases)
+    assert "describe('SHOP-1: Reset password'" in code
+    assert "it('SHOP-1-TC1:" in code
+    assert "cy.visit" in code
+    assert "cy.get" in code
+
+
+def test_cli_playwright_and_cypress_formats(tmp_path: Path):
+    stories_file = tmp_path / "stories.json"
+    stories_file.write_text(json.dumps([STORY]), encoding="utf-8")
+    categories_file = tmp_path / "cats.json"
+    categories_file.write_text(json.dumps({"SHOP-1": ["functional", "boundary"]}), encoding="utf-8")
+
+    pw_out = tmp_path / "test_spec.py"
+    code = main([str(stories_file), "--categories", str(categories_file), "--output", str(pw_out), "--format", "playwright"])
+    assert code == 0
+    assert pw_out.exists() and "from playwright.sync_api" in pw_out.read_text(encoding="utf-8")
+
+    cy_out = tmp_path / "test.cy.ts"
+    code = main([str(stories_file), "--categories", str(categories_file), "--output", str(cy_out), "--format", "cypress"])
+    assert code == 0
+    assert cy_out.exists() and "describe('SHOP-1" in cy_out.read_text(encoding="utf-8")
+
+
+def test_smart_preconditions_extraction():
+    story_cond = {
+        "key": "SHOP-9",
+        "title": "Discount rule",
+        "description": "As a customer, I want discounts.",
+        "acceptance_criteria": [
+            "When the cart exceeds $100, free shipping is applied",
+            "Given an expired token, access is forbidden",
+            "After 3 failed login attempts, the account is locked",
+        ],
+    }
+    cases = generate_test_cases(story_cond, ["functional", "security", "security"], include_optional=True)
+    c1_pre = cases[0]["preconditions"]
+    assert any("Cart exceeds $100" in p for p in c1_pre)
+    c2_pre = cases[3]["preconditions"]
+    assert any("Expired token is active" in p for p in c2_pre)
+    c3_pre = cases[6]["preconditions"]
+    assert any("3 failed login attempts have occurred" in p for p in c3_pre)
+
+
+def test_security_injection_fuzz_drafts():
+    story_sec = {
+        "key": "SEC-1",
+        "title": "Search security",
+        "description": "As a user, I want search input to be safe.",
+        "acceptance_criteria": [
+            "The search query must prevent SQL injection and sanitize special characters",
+        ],
+    }
+    cases = generate_test_cases(story_sec, ["security"])
+    titles = [c["title"] for c in cases]
+    inputs = [c["input"] for c in cases]
+    assert any("SQL injection" in t for t in titles)
+    assert any("Cross-site scripting (XSS)" in t for t in titles)
+    assert any("' OR '1'='1" in inp for inp in inputs)
+    assert any("<script>alert(1)</script>" in inp for inp in inputs)
+
+
+def test_new_field_kinds_validation():
+    story_ip = {
+        "key": "NET-1",
+        "title": "IP Whitelist",
+        "description": "As an admin, I want to whitelist IP addresses.",
+        "acceptance_criteria": [
+            "The IP address must be valid",
+            "The domain name must be valid",
+            "The SSN must be valid",
+        ],
+    }
+    cases = generate_test_cases(story_ip, ["validation", "validation", "validation"])
+    inputs = [c["input"] for c in cases]
+    assert any("192.168.1.1" in inp for inp in inputs)
+    assert any("example.com" in inp for inp in inputs)
+    assert any("123-45-6789" in inp for inp in inputs)
+
