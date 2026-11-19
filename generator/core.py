@@ -1,26 +1,30 @@
-"""Turn a story and the category of each acceptance criterion into test cases."""
-
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Mapping, Sequence
 
 from .templates import TEMPLATES, StoryContext
+from .text import to_gherkin
 
-CATEGORIES = ("functional", "validation", "boundary", "security", "performance", "usability")
+CATEGORIES = (
+    "functional",
+    "validation",
+    "boundary",
+    "security",
+    "performance",
+    "usability",
+    "reliability",
+    "portability",
+    "maintainability",
+)
 TEST_CASE_FIELDS = ("story_key", "id", "title", "type", "input", "steps", "expected")
+OPTIONAL_FIELDS = ("priority", "preconditions", "execution_type", "gherkin")
+ALL_FIELDS = TEST_CASE_FIELDS + OPTIONAL_FIELDS
 
 
-def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> List[Dict[str, Any]]:
-    """Return the test cases for one story, in the agreed test case format.
-
-    Each test case states its ``input`` (the test data) and its ``expected`` output.
-
-    ``categories`` holds one category per acceptance criterion, in the same
-    order. Each item is a category name ("boundary") or the
-    ``(category, confidence)`` pair returned by ``predict_category``.
-    Every criterion produces at least two test cases; ids run
-    ``<key>-TC1``, ``<key>-TC2``, ... across the whole story.
-    """
+def generate_test_cases(story: Mapping[str, Any],
+                        categories: Sequence[Any],
+                        include_optional: bool = False,
+                        deduplicate: bool = False) -> List[Dict[str, Any]]:
     criteria = _criteria(story)
     names = [_category_name(item) for item in categories]
     if len(names) != len(criteria):
@@ -33,7 +37,7 @@ def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> 
     test_cases: List[Dict[str, Any]] = []
     for criterion, category in zip(criteria, names):
         for draft in TEMPLATES[category](context, criterion):
-            test_cases.append({
+            tc: Dict[str, Any] = {
                 "story_key": context.key,
                 "id": f"{context.key}-TC{len(test_cases) + 1}",
                 "title": draft.title,
@@ -41,21 +45,100 @@ def generate_test_cases(story: Mapping[str, Any], categories: Sequence[Any]) -> 
                 "input": draft.input,
                 "steps": list(draft.steps),
                 "expected": draft.expected,
-            })
+            }
+            if include_optional:
+                is_negative = "rejected" in draft.title.lower() or "denied" in draft.title.lower()
+                tc["priority"] = draft.priority or _default_priority(category, is_negative)
+                tc["preconditions"] = list(draft.preconditions) if draft.preconditions else _default_preconditions(context, category)
+                tc["execution_type"] = draft.execution_type or _default_execution_type(category)
+                tc["gherkin"] = to_gherkin(tc)
+            test_cases.append(tc)
+
+    if deduplicate:
+        return deduplicate_test_cases(test_cases)
     return test_cases
 
 
 def generate_for_stories(stories: Iterable[Mapping[str, Any]],
-                         categories_by_key: Mapping[str, Sequence[Any]]) -> List[Dict[str, Any]]:
-    """Generate test cases for many stories; ``categories_by_key`` maps story key -> categories."""
+                         categories_by_key: Mapping[str, Sequence[Any]],
+                         include_optional: bool = False,
+                         deduplicate: bool = False) -> List[Dict[str, Any]]:
     stories = list(stories)
     missing = [str(story.get("key")) for story in stories if story.get("key") not in categories_by_key]
     if missing:
         raise ValueError(f"No categories given for these stories: {', '.join(missing)}")
     test_cases: List[Dict[str, Any]] = []
     for story in stories:
-        test_cases.extend(generate_test_cases(story, categories_by_key[story["key"]]))
+        test_cases.extend(
+            generate_test_cases(
+                story,
+                categories_by_key[story["key"]],
+                include_optional=include_optional,
+                deduplicate=deduplicate,
+            )
+        )
     return test_cases
+
+
+def deduplicate_test_cases(test_cases: Sequence[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    seen = set()
+    unique: List[Dict[str, Any]] = []
+    for tc in test_cases:
+        sig = (
+            str(tc.get("story_key")),
+            str(tc.get("type")),
+            str(tc.get("input")),
+            tuple(str(s) for s in (tc.get("steps") or [])),
+            str(tc.get("expected")),
+        )
+        if sig in seen:
+            continue
+        seen.add(sig)
+        unique.append(dict(tc))
+
+    per_story_count: Dict[str, int] = {}
+    for item in unique:
+        sk = str(item["story_key"])
+        per_story_count[sk] = per_story_count.get(sk, 0) + 1
+        item["id"] = f"{sk}-TC{per_story_count[sk]}"
+    return unique
+
+
+def _default_priority(category: str, is_negative: bool) -> str:
+    if category == "security":
+        return "Critical"
+    if category in ("validation", "boundary") and is_negative:
+        return "High"
+    if category in ("functional", "reliability"):
+        return "High"
+    if category in ("performance", "portability"):
+        return "Medium"
+    return "Low"
+
+
+def _default_preconditions(context: StoryContext, category: str) -> List[str]:
+    feature = context.feature_name
+    if category == "security":
+        return ["User accounts with configured permission roles exist", f"{feature} service is online"]
+    if category == "performance":
+        return [f"{feature} is deployed in the test environment", "Load injection harness is operational"]
+    if category == "reliability":
+        return [f"{feature} is operational under standard baseline conditions", "Fault injection tools are ready"]
+    if category == "portability":
+        return [f"{feature} is deployed and accessible across target client environments"]
+    if category == "maintainability":
+        return [f"Source code repository and component boundaries for {feature} are available"]
+    return [f"User is on the {feature} page with active connectivity"]
+
+
+def _default_execution_type(category: str) -> str:
+    if category == "security":
+        return "security"
+    if category == "performance":
+        return "load"
+    if category in ("usability", "maintainability"):
+        return "manual"
+    return "automated"
 
 
 def _criteria(story: Mapping[str, Any]) -> List[str]:

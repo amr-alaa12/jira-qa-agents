@@ -23,7 +23,7 @@ def test_script_runs_on_the_example_stories(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     test_cases = json.loads(output.read_text(encoding="utf-8"))
-    assert len(test_cases) >= 4  # at least 2 for each of the 2 criteria
+    assert len(test_cases) >= 4
     assert all(tc["story_key"] == "SHOP-1" for tc in test_cases)
     assert "Wrote" in result.stdout
 

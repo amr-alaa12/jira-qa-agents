@@ -1,8 +1,12 @@
 # Test Case Generator (Member 4)
 
-Takes a user story, lets the AI model (the requirement classifier, `model/model.pkl`) pick the category of each acceptance criterion, and writes test cases in the agreed format (`examples/test_cases.json`). Since the 21/10 meeting every test case also has an `input` field, so each result states its **input** and its **expected output**. Inputs are concrete values a tester can type (`Email address: "registered.user@example.com"`), not descriptions such as "valid data".
+Takes a user story, categorizes each acceptance criterion across 9 requirement categories, and produces structured test cases. Each test case states its concrete input, steps, and expected output.
 
-**Input → output:** `stories.json` → AI model categories → `test_cases.json`
+**Input -> output:** `stories.json` -> 9 categories -> `test_cases.json` / CSV / Excel / Gherkin / Xray
+
+## Standard Test Case Format
+
+The primary core attributes are always generated:
 
 ```json
 {
@@ -11,8 +15,25 @@ Takes a user story, lets the AI model (the requirement classifier, `model/model.
   "title": "New password with 7 characters is rejected",
   "type": "boundary",
   "input": "New password: \"Passw0r\" (7 characters)",
-  "steps": ["Open the reset password page", "Enter \"Passw0r\" (7 characters) in the new password field", "Submit the form"],
+  "steps": [
+    "Open the reset password page",
+    "Enter \"Passw0r\" (7 characters) in the new password field",
+    "Submit the form"
+  ],
   "expected": "The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
+}
+```
+
+Optional enterprise attributes (`priority`, `preconditions`, `execution_type`, `gherkin`) are generated when requested (`--optional` or `include_optional=True`):
+
+```json
+{
+  "priority": "High",
+  "preconditions": [
+    "User is on the open the reset password page with active connectivity"
+  ],
+  "execution_type": "automated",
+  "gherkin": "Scenario: New password with 7 characters is rejected\n  Given Open the reset password page\n  When Enter \"Passw0r\" (7 characters) in the new password field\n  And Submit the form\n  Then The new password is rejected, the form is not submitted and an error message explains the limit (at least 8 characters)"
 }
 ```
 
@@ -21,85 +42,83 @@ Takes a user story, lets the AI model (the requirement classifier, `model/model.
 From the repository root:
 
 ```bash
-pip install -r generator/requirements.txt
-python model/train_and_predict.py           # once: trains and saves model/model.pkl
-python generator/generate.py                # examples/stories.json -> generator/test_cases.json
+python generator/generate.py
 ```
 
-The script prints the category the model chose for every criterion with its confidence, and marks predictions below 0.5 with `<- low confidence, please check`:
-
-```text
-SHOP-1: The user receives a reset link by email -> functional (0.69)
-SHOP-1: The new password must be at least 8 characters -> boundary (0.87)
-Wrote 6 test cases for 1 story to generator/test_cases.json
-```
-
-Options:
+CLI Options:
 
 ```bash
-python generator/generate.py path/to/stories.json \
-    --model model/model.pkl \
-    --output generator/test_cases.json
+python generator/generate.py examples/stories.json --output generator/test_cases.json
+python generator/generate.py examples/stories.json --optional
+python generator/generate.py examples/stories.json --deduplicate
+python generator/generate.py examples/stories.json --format csv --output test_cases.csv
+python generator/generate.py examples/stories.json --format excel --output test_cases.xlsx
+python generator/generate.py examples/stories.json --format gherkin --output test_cases.feature
+python generator/generate.py examples/stories.json --format xray --output xray_tests.json
 ```
 
-To skip the model (for example to fix a wrong prediction), pass `--categories` with a JSON file of hand-typed categories: one list per story key, one category per acceptance criterion, in the same order. `generator/categories.json` is an example:
-
-```json
-{ "SHOP-1": ["functional", "boundary"] }
-```
-
-On bad input the script prints a clear `Error: ...` message and exits with code 1. Bad input means: a missing file, invalid JSON, a missing or unloadable model, a story with no categories, an unknown category, or a different number of categories than criteria.
-
-## Use it from code (for `main.py`)
+## Use it from code
 
 ```python
-from generator import generate_with_model
+from generator import generate_test_cases
 
-test_cases = generate_with_model(stories)   # loads model/model.pkl and classifies every criterion
+test_cases = generate_test_cases(story, ["functional", "boundary"])
 ```
 
-To reuse one loaded model, or to see the predictions:
+With optional attributes and deduplication:
 
 ```python
-from generator import CategoryModel, generate_test_cases
-
-model = CategoryModel.load()                               # or CategoryModel.load("path/to/model.pkl")
-categories = model.predict(story["acceptance_criteria"])   # [("functional", 0.69), ("boundary", 0.87)]
-test_cases = generate_test_cases(story, categories)
+test_cases = generate_test_cases(
+    story,
+    ["functional", "boundary"],
+    include_optional=True,
+    deduplicate=True,
+)
 ```
 
-`generate_test_cases(story, ["functional", "boundary"])` also accepts plain category names. `generate_for_stories(stories, {"SHOP-1": [...], ...})` does the same for a list of stories. Ids are `<story key>-TC1`, `-TC2`, … and are numbered separately for each story.
+Exporting to various formats:
 
-## Templates
+```python
+from generator import to_csv, to_excel, to_gherkin_feature, to_xray_json
 
-Every acceptance criterion produces at least 2 test cases.
+csv_string = to_csv(test_cases)
+to_excel(test_cases, "test_cases.xlsx")
+gherkin_feature = to_gherkin_feature(story, test_cases)
+xray_payload = to_xray_json(test_cases)
+```
 
-| Category | Test cases |
-|---|---|
-| `functional` | three cases with concrete values: the normal path (e.g. email `"registered.user@example.com"`), a wrong value (`"userexample.com"`) and an empty value. The field (email, phone, password, ...) is found in the criterion or the story; when none is found the input names which fields are filled and how. |
-| `validation` | one valid input and two invalid inputs. Sample values depend on the field: email, phone, date, URL, card, postal code, password, number or name. A required field is also tested empty. |
-| `boundary` | just below, at and just above every number found with `re`. "at least 8 characters" → 7 (rejected), 8 and 9 (accepted), each with a literal value to type (`"Passw0r"` for 7 characters). Ranges ("between 3 and 20") test both ends. Money uses cent steps ($49.99 / $50 / $50.01). Rules such as "locked after 3 attempts" are tested as "applies / does not apply yet". |
-| `security` | an allowed user and a blocked user, each with an example account (e.g. `admin@example.com`): admin vs regular user, owner vs other user, a named group, or logged-in user vs anonymous visitor. A criterion about encryption or hashing gets a third, data-protection case. |
-| `performance` | one measurement with a single user and one load test (100 concurrent users by default, or the number in the criterion). Both use the time limit from the criterion, e.g. "under 2 seconds". |
-| `usability` | a first-time user completes the task without help, plus one check: a phone-sized screen, clear messages, or keyboard-only use (depending on the criterion) |
+To generate for multiple stories:
 
-The numbers parser understands `at least`, `at most`, `no more than`, `must not exceed`, `up to`, `within`, `more than`, `over`, `less than`, `under`, `exactly`, `after`, `between X and Y`, `X or more`, decimals, `%`, currencies (`$ € £`) and number words (`one` … `twenty`).
+```python
+from generator import generate_for_stories
 
-## Files
+test_cases = generate_for_stories(stories, {"SHOP-1": ["functional", "boundary"]})
+```
 
-| File | Purpose |
-|---|---|
-| `classifier.py` | `CategoryModel` (loads the AI model) and `generate_with_model()` |
-| `core.py` | `generate_test_cases()` and `generate_for_stories()`, input checks |
-| `templates.py` | one template per category |
-| `limits.py` | finds numeric limits ("at least 8 characters") and the values to test |
-| `text.py` | small helpers that pull phrases from stories ("I want to reset my password" → "reset the password") |
-| `generate.py` | command-line script |
-| `categories.json` | hand-typed categories for the example stories (used with `--categories`) |
-| `tests/` | pytest tests: 4 stories, all 6 categories, the AI model integration, the numbers parser and the script |
+Using the self-made category classifier:
 
-## Tests
+```python
+from generator import CategoryModel, generate_with_model
+
+model = CategoryModel()
+categories = model.predict(story["acceptance_criteria"])
+test_cases = generate_with_model(stories, model=model)
+```
+
+## Supported Categories (9 Total)
+
+1. **functional** - Core business logic and end-to-end user actions.
+2. **validation** - Input data format checks, mandatory/optional fields, and error messages.
+3. **boundary** - Edge cases at, just below, and just above numeric/length thresholds.
+4. **security** - Role-based permissions, authentication status, and data protection.
+5. **performance** - Single-user response times and concurrent load limits.
+6. **usability** - Navigation, mobile responsiveness, keyboard accessibility, and clarity.
+7. **reliability** - Network dropouts, service errors, and recovery.
+8. **portability** - Cross-browser (Chrome, Firefox, Safari) and cross-OS behavior.
+9. **maintainability** - Modularity, config isolation, and logging.
+
+## Run tests
 
 ```bash
-python -m pytest generator -q
+pytest generator -v
 ```

@@ -1,10 +1,3 @@
-"""One test-case template per requirement category.
-
-Each template takes the story context and one acceptance criterion and
-returns at least two drafts. The core module turns drafts into test cases
-in the agreed format (adds story_key, id and type).
-"""
-
 from __future__ import annotations
 
 import re
@@ -18,24 +11,30 @@ from .limits import TRIGGER, Limit, extract_limits
 
 @dataclass(frozen=True)
 class StoryContext:
-    """What every template needs to know about the story."""
-
     key: str
-    feature: str            # "reset password", from the story title
-    action: Optional[str]   # "reset the password", from "I want to ..."
+    feature: str
+    action: Optional[str]
+    persona: Optional[str] = None
+    benefit: Optional[str] = None
 
     @classmethod
     def from_story(cls, story: dict) -> "StoryContext":
         title = text.sentence(str(story.get("title") or ""))
+        desc = str(story.get("description") or "")
         return cls(
             key=str(story["key"]),
             feature=text.lower_first(title) if title else "",
-            action=text.story_action(str(story.get("description") or "")),
+            action=text.story_action(desc),
+            persona=text.story_persona(desc),
+            benefit=text.story_benefit(desc),
         )
 
     @property
     def open_step(self) -> str:
-        return f"Open the {self.feature} page" if self.feature else "Open the application"
+        if not self.feature:
+            return "Open the application"
+        clean = text.clean_page_name(self.feature)
+        return f"Open the {clean}"
 
     @property
     def feature_name(self) -> str:
@@ -45,24 +44,29 @@ class StoryContext:
     def task(self) -> str:
         return self.action or f"use the {self.feature_name} feature"
 
+    @property
+    def submit_step(self) -> str:
+        return text.action_button(self.action or self.feature)
+
 
 @dataclass(frozen=True)
 class Draft:
     title: str
-    input: str               # the test data: "New password: 7 characters"
+    input: str
     steps: Tuple[str, ...]
     expected: str
+    priority: Optional[str] = None
+    preconditions: Optional[Tuple[str, ...]] = None
+    execution_type: Optional[str] = None
 
 
 Template = Callable[[StoryContext, str], List[Draft]]
 
 
-# --- validation: one valid input and two invalid inputs ---------------------------
-
 @dataclass(frozen=True)
 class _Sample:
-    entry: Optional[str]   # literal value to type; None means "leave the field empty"
-    reason: str            # how the title describes it: "without an @ sign"
+    entry: Optional[str]
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -71,10 +75,9 @@ class _FieldKind:
     label: str
     valid: str
     invalid: Tuple[_Sample, _Sample]
-    existing: Optional[str] = None   # a value the system already knows, for the normal path
+    existing: Optional[str] = None
 
 
-# Checked in order, so "phone number" matches phone before number.
 _FIELD_KINDS = (
     _FieldKind(r"e-?mail", "email address", "user@example.com",
                (_Sample("userexample.com", "without an @ sign"), _Sample("user@", "without a domain")),
@@ -96,6 +99,12 @@ _FIELD_KINDS = (
     _FieldKind(r"\bname\b|username", "name", "Alex Morgan",
                (_Sample("<script>alert(1)</script>", "with forbidden characters"),
                 _Sample("@@@###", "made of symbols only"))),
+    _FieldKind(r"address|street", "address", "123 Main Street",
+               (_Sample("@@@###", "with forbidden symbols"), _Sample("", "left empty"))),
+    _FieldKind(r"promo|coupon|discount\s+code", "promo code", "SAVE20",
+               (_Sample("EXPIRED99", "that is expired"), _Sample("INVALID", "that does not exist"))),
+    _FieldKind(r"search|query|keyword", "search query", "wireless headphones",
+               (_Sample("<script>alert(1)</script>", "with injection characters"), _Sample("", "left empty"))),
 )
 _REQUIRED_RE = re.compile(
     r"\b(?:required|mandatory|(?:must\s+not|cannot|can't|may\s+not)\s+be\s+(?:empty|blank|left\s+empty))\b",
@@ -123,14 +132,14 @@ def validation(ctx: StoryContext, criterion: str) -> List[Draft]:
     drafts = [Draft(
         title=f"Valid {field} is accepted",
         input=f"{text.capitalize(field)}: {valid_entry}",
-        steps=(ctx.open_step, f"Enter {valid_entry} in the {field} field", "Submit the form"),
+        steps=(ctx.open_step, f"Enter {valid_entry} in the {field} field", ctx.submit_step),
         expected=f"The {field} is accepted and the form can be submitted",
     )]
     for sample in invalid:
         drafts.append(Draft(
             title=text.capitalize(f"{field} {sample.reason} is rejected"),
             input=_invalid_input(sample, field),
-            steps=(ctx.open_step, _invalid_entry_step(sample, field, kind is None), "Submit the form"),
+            steps=(ctx.open_step, _invalid_entry_step(sample, field, kind is None), ctx.submit_step),
             expected=f"The {field} is rejected and a clear validation message is shown next to the field",
         ))
     return drafts
@@ -159,10 +168,7 @@ def _invalid_entry_step(sample: _Sample, field: str, generic: bool) -> str:
     return f'Enter "{sample.entry}" in the {field} field'
 
 
-# --- functional: the normal path, a wrong value and an empty value ----------------
-
 def functional(ctx: StoryContext, criterion: str) -> List[Draft]:
-    """Each case names the exact value typed, so a tester can run it as written."""
     statement = text.sentence(criterion)
     kind = _field_kind(criterion) or _field_kind(ctx.task) or _field_kind(ctx.feature)
     goal = text.lower_first(statement)
@@ -177,28 +183,26 @@ def functional(ctx: StoryContext, criterion: str) -> List[Draft]:
         Draft(
             title=text.capitalize(f"{adjective} {field}: {text.lower_first(text.strip_article(statement))}"),
             input=f'{text.capitalize(field)}: "{value}"',
-            steps=(ctx.open_step, f'Enter the {adjective} {field} "{value}"', "Submit the form"),
+            steps=(ctx.open_step, f'Enter the {adjective} {field} "{value}"', ctx.submit_step),
             expected=f"A confirmation message is shown and {goal}",
         ),
         Draft(
             title=text.capitalize(f"{field} {wrong.reason} is rejected"),
             input=f'{text.capitalize(field)}: "{wrong.entry}"',
-            steps=(ctx.open_step, f'Enter "{wrong.entry}" in the {field} field', "Submit the form"),
+            steps=(ctx.open_step, f'Enter "{wrong.entry}" in the {field} field', ctx.submit_step),
             expected=(f"The {field} is rejected, a validation error is shown next to the field, "
-                      f"and this does not happen: {goal}"),
+                      "and the form submission is blocked"),
         ),
         Draft(
             title=text.capitalize(f"empty {field} is rejected"),
             input=f'{text.capitalize(field)}: "" (empty)',
-            steps=(ctx.open_step, f"Leave the {field} field empty", "Submit the form"),
-            expected=(f"The form is not submitted, a required-field message is shown for the {field}, "
-                      f"and this does not happen: {goal}"),
+            steps=(ctx.open_step, f"Leave the {field} field empty", ctx.submit_step),
+            expected=(f"The form is not submitted, and a required-field message is shown for the {field}"),
         ),
     ]
 
 
 def _functional_without_field(ctx: StoryContext, statement: str) -> List[Draft]:
-    """No known field in the story, so the input names which fields are filled and how."""
     task = text.capitalize(ctx.task)
     goal = text.lower_first(statement)
     return [
@@ -213,20 +217,16 @@ def _functional_without_field(ctx: StoryContext, statement: str) -> List[Draft]:
             input="One required field: a value in the wrong format, the other fields correct",
             steps=(ctx.open_step, "Fill one required field with a value in the wrong format "
                    "and the other fields correctly", f"{task}"),
-            expected=("The action is not completed, a validation error is shown next to the wrong field, "
-                      f"and this does not happen: {goal}"),
+            expected=("The action is not completed, and a validation error is shown next to the wrong field"),
         ),
         Draft(
             title="Empty required fields are rejected",
             input="All required fields: (empty)",
             steps=(ctx.open_step, "Leave every required field empty", f"{task}"),
-            expected=("The action is not completed, a required-field message is shown for each empty field, "
-                      f"and this does not happen: {goal}"),
+            expected=("The action is not completed, and a required-field message is shown for each empty field"),
         ),
     ]
 
-
-# --- boundary: just below, at and just above every limit --------------------------
 
 _CONSTRAINT_RE = re.compile(
     r"\b(?:must|should|shall|has\s+to|have\s+to|needs?\s+to|cannot|can't|can|may|limited"
@@ -255,14 +255,13 @@ def boundary(ctx: StoryContext, criterion: str) -> List[Draft]:
                 title=_boundary_title(limit, subject, quantity, inside, condition),
                 input=_boundary_input(limit, subject, quantity, value),
                 steps=(ctx.open_step, _boundary_step(limit, subject, quantity, condition, value),
-                       "Submit the form" if limit.kind == "length" else "Check the result"),
+                       ctx.submit_step if limit.kind == "length" else "Check the result"),
                 expected=_boundary_expected(limit, subject, quantity, inside, condition, criterion),
             ))
     return drafts
 
 
 def _subject_without_limit(criterion: str, limits: List[Limit]) -> Optional[str]:
-    """"Orders over $50 get free shipping" -> "order", not "orders over $50"."""
     subject = text.subject(criterion)
     if not subject:
         return None
@@ -293,7 +292,6 @@ def _boundary_input(limit: Limit, subject: str, quantity: str, value: Decimal) -
     return text.capitalize(f"{subject}: {quantity}")
 
 
-# Characters a sample is cut from, so a 7-character password is "Passw0r".
 _PASSWORD_CHARS = "Passw0rd!Secure#2026Key"
 _DIGIT_CHARS = "1234567890"
 _LETTER_CHARS = "abcdefghijklmnopqrstuvwxyz"
@@ -301,7 +299,6 @@ _LONGEST_LITERAL = 30
 
 
 def _length_sample(limit: Limit, subject: str, value: Decimal) -> Optional[str]:
-    """A literal value with exactly ``value`` characters: '"Passw0r"' for 7 characters."""
     if limit.kind != "length" or value != value.to_integral_value() or limit.unit.split()[-1] in ("word", "words"):
         return None
     count = int(value)
@@ -374,14 +371,12 @@ def _boundary_without_number(ctx: StoryContext, criterion: str) -> List[Draft]:
     ]
 
 
-# --- security: an allowed user and a blocked user ---------------------------------
-
 @dataclass(frozen=True)
 class _Roles:
     allowed: str
     blocked: str
     allowed_account: str
-    blocked_account: Optional[str]   # None for an anonymous visitor
+    blocked_account: Optional[str]
 
 
 _ONLY_GROUP_RE = re.compile(
@@ -450,8 +445,6 @@ def _login_step(role: str, account: Optional[str]) -> str:
     return f"Log in as {text.with_article(role)} ({account})"
 
 
-# --- performance: one user, then under load ---------------------------------------
-
 _LOAD_UNIT_RE = re.compile(r"\b(?:users?|requests?|sessions?|connections?|visitors?)\b", re.IGNORECASE)
 
 
@@ -489,20 +482,19 @@ def performance(ctx: StoryContext, criterion: str) -> List[Draft]:
     ]
 
 
-# --- usability: a first-time user, plus one ease-of-use check ---------------------
-
 _MOBILE_RE = re.compile(r"\b(?:mobile|phone|tablet|responsive|small\s+screens?|screen\s+sizes?)\b", re.IGNORECASE)
 _MESSAGE_RE = re.compile(r"\b(?:error|message|messages|feedback|confirm\w*|notification\w*|hint)\b", re.IGNORECASE)
 
 
 def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     statement = text.lower_first(text.sentence(criterion))
+    persona = ctx.persona or "user"
     drafts = [Draft(
-        title=f"First-time user can {ctx.task} without help",
-        input="A first-time user, no instructions",
-        steps=(f"Give a first-time user this task: {ctx.task}", "Give no instructions or help",
+        title=f"First-time {persona} can {ctx.task} without help",
+        input=f"A first-time {persona}, no instructions",
+        steps=(f"Give a first-time {persona} this task: {ctx.task}", "Give no instructions or help",
                "Observe where the user hesitates or makes mistakes"),
-        expected=f"The user completes the task without help, and this holds: {statement}",
+        expected=f"The {persona} completes the task without help, and this holds: {statement}",
     )]
     if _MOBILE_RE.search(criterion):
         drafts.append(Draft(
@@ -530,6 +522,282 @@ def usability(ctx: StoryContext, criterion: str) -> List[Draft]:
     return drafts
 
 
+_RECOVERY_RE = re.compile(
+    r"\b(?:recover|retry|reconnect|restore|resume|failover|fall\s*back|backup|redundan|replicat)\b",
+    re.IGNORECASE,
+)
+_AVAILABILITY_RE = re.compile(
+    r"\b(?:uptime|availab|SLA|99(?:\.\d+)?%|24/7|always\s+(?:on|available)|downtime)\b",
+    re.IGNORECASE,
+)
+
+
+def reliability(ctx: StoryContext, criterion: str) -> List[Draft]:
+    statement = text.lower_first(text.sentence(criterion))
+    subject = text.subject(criterion) or ctx.feature_name
+
+    drafts = [Draft(
+        title=text.capitalize(f"{subject} works correctly under normal conditions"),
+        input="Normal operating conditions, stable network",
+        steps=(ctx.open_step, f"Use the {ctx.feature_name} feature under normal conditions",
+               "Verify the operation completes successfully"),
+        expected=f"The operation completes without errors and the requirement holds: {statement}",
+    )]
+
+    if _RECOVERY_RE.search(criterion):
+        drafts.append(Draft(
+            title=text.capitalize(f"{subject} recovers after a failure"),
+            input="Simulated failure: network disconnection or service restart",
+            steps=(ctx.open_step, f"Trigger a failure while using the {ctx.feature_name} feature "
+                   "(e.g. disconnect the network or restart a dependent service)",
+                   "Wait for the system to detect the failure",
+                   "Verify that the system recovers automatically or provides clear recovery steps"),
+            expected=f"The system recovers gracefully, no data is lost, and the requirement holds: {statement}",
+        ))
+    elif _AVAILABILITY_RE.search(criterion):
+        drafts.append(Draft(
+            title=text.capitalize(f"{subject} remains available during extended operation"),
+            input="Extended operation: 24+ hours of continuous use",
+            steps=("Run the system under typical load for an extended period (24+ hours)",
+                   "Monitor for crashes, memory leaks and service interruptions",
+                   "Record any downtime or degraded performance"),
+            expected=f"The system remains available throughout the test period and the requirement holds: {statement}",
+        ))
+    else:
+        drafts.append(Draft(
+            title=text.capitalize(f"{subject} handles unexpected failures gracefully"),
+            input="Simulated failure: unexpected error or service interruption",
+            steps=(ctx.open_step, "Simulate an unexpected failure (e.g. kill a backend process, "
+                   "inject a database timeout or corrupt a network response)",
+                   "Observe the system's response"),
+            expected=(f"The system does not crash, shows a clear error message to the user, "
+                      f"preserves existing data and can resume normal operation"),
+        ))
+
+    return drafts
+
+
+_BROWSER_RE = re.compile(
+    r"\b(?:browsers?|chrome|firefox|safari|edge|opera|IE|internet\s+explorer)\b",
+    re.IGNORECASE,
+)
+_OS_RE = re.compile(
+    r"\b(?:windows|linux|mac(?:os)?|android|ios|operating\s+systems?|cross[\s-]platform)\b",
+    re.IGNORECASE,
+)
+_DEVICE_RE = re.compile(
+    r"\b(?:devices?|desktops?|laptops?|tablets?|phones?|mobile|wearables?|smart\s*(?:phones?|watch(?:es)?|tv))\b",
+    re.IGNORECASE,
+)
+
+
+def portability(ctx: StoryContext, criterion: str) -> List[Draft]:
+    statement = text.lower_first(text.sentence(criterion))
+    subject = text.subject(criterion) or ctx.feature_name
+
+    if _BROWSER_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} works in Chrome (primary browser)"),
+                input="Browser: Google Chrome (latest stable version)",
+                steps=(f"Open {ctx.feature_name} in the latest stable Chrome",
+                       f"Try to {ctx.task}", "Verify all features work correctly"),
+                expected=f"All features work correctly in Chrome and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"{subject} works in Firefox and Safari"),
+                input="Browsers: Firefox (latest stable), Safari (latest stable)",
+                steps=(f"Open {ctx.feature_name} in Firefox and repeat the test",
+                       f"Open {ctx.feature_name} in Safari and repeat the test",
+                       "Compare the behaviour, layout and functionality with Chrome"),
+                expected=(f"The feature behaves identically in Firefox and Safari, with no layout "
+                          f"differences or broken functionality"),
+            ),
+        ]
+    elif _OS_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} works on the primary operating system"),
+                input="OS: Windows 11 (or the project's primary OS)",
+                steps=(f"Install or open {ctx.feature_name} on the primary OS",
+                       f"Try to {ctx.task}", "Verify all features work correctly"),
+                expected=f"All features work correctly on the primary OS and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"{subject} works on a different operating system"),
+                input="OS: macOS or Linux (a secondary platform)",
+                steps=(f"Install or open {ctx.feature_name} on a secondary OS (macOS or Linux)",
+                       f"Try to {ctx.task}",
+                       "Compare the behaviour with the primary OS"),
+                expected=(f"The feature behaves correctly on the secondary OS with no platform-specific "
+                          f"errors or missing functionality"),
+            ),
+        ]
+    elif _DEVICE_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} works on a desktop device"),
+                input="Device: desktop or laptop with standard screen",
+                steps=(f"Open {ctx.feature_name} on a desktop or laptop",
+                       f"Try to {ctx.task}", "Verify all features work correctly"),
+                expected=f"All features work correctly on a desktop device and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"{subject} works on a mobile device"),
+                input="Device: smartphone or tablet",
+                steps=(f"Open {ctx.feature_name} on a smartphone or tablet",
+                       f"Try to {ctx.task}",
+                       "Compare the behaviour with the desktop version"),
+                expected=(f"The feature works correctly on mobile, with appropriate touch interactions "
+                          f"and readable layout"),
+            ),
+        ]
+    else:
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} works in the primary environment"),
+                input="Primary deployment environment (production-like setup)",
+                steps=(f"Deploy or open {ctx.feature_name} in the primary environment",
+                       f"Try to {ctx.task}", "Verify all features work correctly"),
+                expected=f"All features work correctly in the primary environment and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"{subject} works in an alternative environment"),
+                input="Alternative environment (different browser, OS or device)",
+                steps=(f"Deploy or open {ctx.feature_name} in an alternative environment "
+                       "(different browser, OS or device)",
+                       f"Try to {ctx.task}",
+                       "Compare the behaviour with the primary environment"),
+                expected=(f"The feature behaves correctly in the alternative environment with no "
+                          f"platform-specific errors or degraded functionality"),
+            ),
+        ]
+
+    return drafts
+
+
+_CONFIG_RE = re.compile(
+    r"\b(?:config\w*|setting|parameter|variable|environment|env\s*var|toggle|feature\s+flag)\b",
+    re.IGNORECASE,
+)
+_LOG_RE = re.compile(
+    r"\b(?:log|logging|trace|audit\s+trail|monitor|debug|diagnostic)\b",
+    re.IGNORECASE,
+)
+_DOC_RE = re.compile(
+    r"\b(?:document\w*|comment\w*|readme|wiki|API\s+doc|changelog|release\s+note)\b",
+    re.IGNORECASE,
+)
+_MODULAR_RE = re.compile(
+    r"\b(?:modular|module|component|decouple|loosely\s+coupled|separat|encapsulat|refactor|extend)\b",
+    re.IGNORECASE,
+)
+
+
+def maintainability(ctx: StoryContext, criterion: str) -> List[Draft]:
+    statement = text.lower_first(text.sentence(criterion))
+    subject = text.subject(criterion) or ctx.feature_name
+
+    if _CONFIG_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} can be changed without modifying code"),
+                input="Configuration: a changed setting value (e.g. timeout, threshold or feature flag)",
+                steps=("Identify the configuration parameter described in the requirement",
+                       "Change its value via config file, environment variable or admin panel",
+                       "Restart or reload the application and verify the change takes effect"),
+                expected=f"The change takes effect without code modification and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"Invalid {subject} configuration is handled safely"),
+                input="Configuration: an invalid or missing value",
+                steps=("Set the configuration parameter to an invalid value (or remove it entirely)",
+                       "Restart or reload the application",
+                       "Observe whether the system uses a safe default or shows a clear error"),
+                expected=("The system either falls back to a safe default or refuses to start with "
+                          "a clear error message; it never silently uses the invalid value"),
+            ),
+        ]
+    elif _LOG_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} produces useful log entries"),
+                input="One successful and one failed operation",
+                steps=(f"Perform a successful {ctx.task}",
+                       f"Perform a failing {ctx.task} (e.g. with invalid input)",
+                       "Inspect the application logs for both operations"),
+                expected=f"Each operation is logged with enough detail to diagnose issues, and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"Sensitive data is not exposed in {subject}"),
+                input="Operation involving sensitive data (passwords, tokens, PII)",
+                steps=("Perform an operation that involves sensitive data",
+                       "Inspect the application logs",
+                       "Search for any passwords, tokens or personally identifiable information"),
+                expected="No sensitive data appears in the logs in plain text",
+            ),
+        ]
+    elif _DOC_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} exists and is up to date"),
+                input="Current codebase and feature set",
+                steps=("Locate the documentation for the feature or component",
+                       "Compare the documentation against the current code and behaviour",
+                       "Check for missing sections, outdated instructions or broken examples"),
+                expected=f"The documentation accurately describes the current behaviour and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"A new team member can understand {subject}"),
+                input="A developer unfamiliar with the codebase",
+                steps=("Give a developer unfamiliar with the codebase only the documentation",
+                       "Ask them to explain how the feature works or to make a small change",
+                       "Observe whether the documentation is sufficient"),
+                expected="The developer can understand the feature and make a change using only the documentation",
+            ),
+        ]
+    elif _MODULAR_RE.search(criterion):
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} can be modified independently"),
+                input="A small change to one module or component",
+                steps=("Identify the module or component described in the requirement",
+                       "Make a small change to it (e.g. add a field, change a label)",
+                       "Run the existing tests and verify that unrelated modules are not affected"),
+                expected=f"The change is isolated to the target module, all tests pass, and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"Changing {subject} does not break other features"),
+                input="A change to the module followed by a full regression test",
+                steps=("Make a change to the module or component",
+                       "Run the full test suite",
+                       "Verify that no unrelated tests fail"),
+                expected="All unrelated tests continue to pass and no side effects are observed",
+            ),
+        ]
+    else:
+        drafts = [
+            Draft(
+                title=text.capitalize(f"{subject} can be updated with minimal effort"),
+                input="A small functional change to the feature",
+                steps=("Identify the code or component responsible for the feature",
+                       "Make a small change (e.g. add a field, adjust a rule)",
+                       "Run the existing tests and verify the change works"),
+                expected=f"The change is straightforward, tests pass, and the requirement holds: {statement}",
+            ),
+            Draft(
+                title=text.capitalize(f"Modifying {subject} does not introduce regressions"),
+                input="A change to the feature followed by a full regression test",
+                steps=("Make a change to the feature",
+                       "Run the full test suite (unit, integration and end-to-end)",
+                       "Review test results for unexpected failures"),
+                expected="All existing tests continue to pass and no regressions are introduced",
+            ),
+        ]
+
+    return drafts
+
+
 TEMPLATES: Dict[str, Template] = {
     "functional": functional,
     "validation": validation,
@@ -537,4 +805,7 @@ TEMPLATES: Dict[str, Template] = {
     "security": security,
     "performance": performance,
     "usability": usability,
+    "reliability": reliability,
+    "portability": portability,
+    "maintainability": maintainability,
 }

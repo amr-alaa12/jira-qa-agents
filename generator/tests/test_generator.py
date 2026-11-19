@@ -57,7 +57,6 @@ STORIES = {
 
 
 def assert_agreed_format(test_case):
-    """The format agreed at kickoff (examples/test_cases.json)."""
     assert tuple(test_case) == TEST_CASE_FIELDS
     for field in ("story_key", "id", "title", "type", "input", "expected"):
         assert isinstance(test_case[field], str) and test_case[field].strip(), field
@@ -71,7 +70,7 @@ def test_output_matches_the_shared_example_format():
     story = json.loads((EXAMPLES / "stories.json").read_text(encoding="utf-8"))[0]
     test_cases = generate_test_cases(story, ["functional", "boundary"])
     for test_case in test_cases:
-        assert set(example) <= set(test_case)  # plus "input", agreed on 21/10
+        assert set(example) <= set(test_case)
         assert_agreed_format(test_case)
 
 
@@ -272,3 +271,71 @@ def test_generate_for_stories_numbers_each_story_separately():
 def test_generate_for_stories_names_stories_without_categories():
     with pytest.raises(ValueError, match="SHOP-2"):
         generate_for_stories([RESET_PASSWORD, LOGIN], {"SHOP-1": ["functional", "boundary"]})
+
+
+def test_reliability_has_normal_and_failure_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The system must remain operational"])
+    test_cases = generate_test_cases(story, ["reliability"])
+    assert len(test_cases) >= 2
+    assert "normal conditions" in test_cases[0]["title"].lower() or "normal conditions" in test_cases[0]["input"].lower()
+    assert any("failure" in tc["title"].lower() or "failure" in tc["expected"].lower() for tc in test_cases)
+
+
+def test_reliability_recovery_keyword_gives_recovery_case():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The system must recover after a network failure"])
+    test_cases = generate_test_cases(story, ["reliability"])
+    assert any("recover" in tc["title"].lower() for tc in test_cases)
+
+
+def test_reliability_availability_keyword_gives_availability_case():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The system must have 99.9% uptime"])
+    test_cases = generate_test_cases(story, ["reliability"])
+    assert any("available" in tc["title"].lower() or "extended" in tc["title"].lower() for tc in test_cases)
+
+
+def test_portability_has_primary_and_alternative_environment():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The application must work everywhere"])
+    test_cases = generate_test_cases(story, ["portability"])
+    assert len(test_cases) >= 2
+    assert any("primary" in tc["title"].lower() for tc in test_cases)
+    assert any("alternative" in tc["title"].lower() for tc in test_cases)
+
+
+def test_portability_browser_keyword_gives_browser_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The page must work in all major browsers"])
+    test_cases = generate_test_cases(story, ["portability"])
+    assert any("chrome" in tc["title"].lower() for tc in test_cases)
+    assert any("firefox" in tc["title"].lower() or "safari" in tc["title"].lower() for tc in test_cases)
+
+
+def test_portability_os_keyword_gives_os_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The app must run on Windows and Linux"])
+    test_cases = generate_test_cases(story, ["portability"])
+    assert any("operating system" in tc["title"].lower() or "os" in tc["input"].lower() for tc in test_cases)
+
+
+def test_maintainability_has_update_and_regression_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The code must be easy to maintain"])
+    test_cases = generate_test_cases(story, ["maintainability"])
+    assert len(test_cases) >= 2
+    assert any("updated" in tc["title"].lower() or "change" in tc["steps"][1].lower()
+               or "update" in tc["title"].lower() for tc in test_cases)
+
+
+def test_maintainability_config_keyword_gives_config_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The timeout must be configurable without code changes"])
+    test_cases = generate_test_cases(story, ["maintainability"])
+    assert any("config" in tc["title"].lower() or "configuration" in tc["title"].lower()
+               or "without modifying code" in tc["title"].lower() for tc in test_cases)
+
+
+def test_maintainability_logging_keyword_gives_log_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The system must log all important events"])
+    test_cases = generate_test_cases(story, ["maintainability"])
+    assert any("log" in tc["title"].lower() for tc in test_cases)
+
+
+def test_maintainability_modular_keyword_gives_modular_cases():
+    story = dict(RESET_PASSWORD, acceptance_criteria=["The system must be modular and loosely coupled"])
+    test_cases = generate_test_cases(story, ["maintainability"])
+    assert any("independently" in tc["title"].lower() or "modified" in tc["title"].lower() for tc in test_cases)

@@ -1,9 +1,7 @@
-"""Small helpers that pull readable phrases out of stories and criteria."""
-
 from __future__ import annotations
 
 import re
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 _SUBJECT_RE = re.compile(
     r"^(?P<subject>.+?)\s+(?:must|should|shall|cannot|can't|can|will|may|has\s+to|have\s+to"
@@ -14,19 +12,26 @@ _STORY_ACTION_RE = re.compile(
     r"\bI\s+(?:want|would\s+like|need|wish)\s+to\s+(?P<action>.+?)(?:,?\s+so\s+that\b|[.;]|$)",
     re.IGNORECASE,
 )
+_STORY_PERSONA_RE = re.compile(
+    r"\bAs\s+(?:an?|the)\s+(?P<role>[^,]+?),\s*I\s+(?:want|would\s+like|need|wish)\b",
+    re.IGNORECASE,
+)
+_STORY_BENEFIT_RE = re.compile(
+    r"\bso\s+that\s+(?P<benefit>[^.;!]+)",
+    re.IGNORECASE,
+)
 _CRITERION_ACTION_RE = re.compile(
     r"\b(?:can|may|is\s+allowed\s+to|are\s+allowed\s+to|is\s+able\s+to|are\s+able\s+to"
     r"|should\s+be\s+able\s+to|must\s+be\s+able\s+to)\s+(?P<action>.+)$",
     re.IGNORECASE,
 )
 _ARTICLE_RE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
-# Words that start with a vowel letter but a consonant sound, and the reverse.
 _A_EXCEPTIONS = ("user", "uni", "use", "usa", "eu", "one", "once")
 _AN_EXCEPTIONS = ("hour", "honest", "honor", "honour")
+_PAGE_SUFFIXES = ("page", "modal", "screen", "view", "dialog", "dashboard", "tab", "portal", "window", "panel")
 
 
 def sentence(value: str) -> str:
-    """Collapse whitespace and drop the final full stop."""
     return re.sub(r"\s+", " ", value).strip().rstrip(".!;:").strip()
 
 
@@ -35,7 +40,6 @@ def capitalize(value: str) -> str:
 
 
 def lower_first(value: str) -> str:
-    """Lower-case the first letter unless the first word is an acronym (URL, PIN)."""
     first_word = value.split(" ", 1)[0]
     if len(first_word) > 1 and first_word.isupper():
         return value
@@ -47,7 +51,6 @@ def strip_article(value: str) -> str:
 
 
 def article(noun: str) -> str:
-    """Return "a" or "an" for a noun phrase."""
     lowered = noun.lower()
     if lowered.startswith(_AN_EXCEPTIONS):
         return "an"
@@ -61,7 +64,6 @@ def with_article(noun: str) -> str:
 
 
 def subject(criterion: str) -> Optional[str]:
-    """The thing a criterion talks about: "The new password must ..." -> "new password"."""
     match = _SUBJECT_RE.match(sentence(criterion))
     if not match:
         return None
@@ -72,7 +74,6 @@ def subject(criterion: str) -> Optional[str]:
 
 
 def singular(noun_phrase: str) -> str:
-    """Make the last word singular so titles read "Password with ... is": "passwords" -> "password"."""
     words = noun_phrase.split(" ")
     last = words[-1]
     if len(last) > 3 and last.endswith("s") and not last.lower().endswith(("ss", "us", "is", "ous")):
@@ -81,7 +82,6 @@ def singular(noun_phrase: str) -> str:
 
 
 def story_action(description: str) -> Optional[str]:
-    """The user's goal: "I want to reset my password so that ..." -> "reset the password"."""
     match = _STORY_ACTION_RE.search(description or "")
     if not match:
         return None
@@ -89,7 +89,66 @@ def story_action(description: str) -> Optional[str]:
     return lower_first(sentence(action)) or None
 
 
+def story_persona(description: str) -> Optional[str]:
+    match = _STORY_PERSONA_RE.search(description or "")
+    if not match:
+        return None
+    return lower_first(sentence(match["role"].strip())) or None
+
+
+def story_benefit(description: str) -> Optional[str]:
+    match = _STORY_BENEFIT_RE.search(description or "")
+    if not match:
+        return None
+    benefit = re.sub(r"\bmy\b", "the", match["benefit"].strip(), flags=re.IGNORECASE)
+    return lower_first(sentence(benefit)) or None
+
+
+def clean_page_name(feature: str) -> str:
+    cleaned = sentence(feature).lower()
+    if any(cleaned.endswith(suffix) for suffix in _PAGE_SUFFIXES):
+        return feature
+    return f"{feature} page"
+
+
+def action_button(phrase: str) -> str:
+    lowered = phrase.lower()
+    if re.search(r"\b(?:reset\s+password|password\s+reset)\b", lowered):
+        return "Submit the form"
+    if re.search(r"\b(?:checkout|pay|payment|place\s+order)\b", lowered):
+        return "Click Place Order"
+    if re.search(r"\b(?:log\s*in|sign\s*in)\b", lowered):
+        return "Click Log In"
+    if re.search(r"\b(?:register|sign\s*up)\b", lowered):
+        return "Click Register"
+    if re.search(r"\b(?:search|find|query)\b", lowered):
+        return "Click Search"
+    if re.search(r"\b(?:delete|remove)\b", lowered):
+        return "Click Delete and confirm"
+    if re.search(r"\b(?:save|update|edit)\b", lowered):
+        return "Click Save"
+    if re.search(r"\b(?:add|create)\b", lowered):
+        return "Click Add"
+    if re.search(r"\b(?:export|download)\b", lowered):
+        return "Click Export"
+    return "Submit the form"
+
+
 def criterion_action(criterion: str) -> Optional[str]:
-    """What a criterion allows: "Only admins can delete products" -> "delete products"."""
     match = _CRITERION_ACTION_RE.search(sentence(criterion))
     return match["action"].strip() if match else None
+
+
+def to_gherkin(test_case: Mapping[str, Any]) -> str:
+    title = str(test_case.get("title") or "Scenario")
+    steps = [str(s) for s in (test_case.get("steps") or [])]
+    expected = str(test_case.get("expected") or "The expected result is verified")
+    lines = [f"Scenario: {title}"]
+    if steps:
+        lines.append(f"  Given {capitalize(steps[0])}")
+        if len(steps) > 1:
+            lines.append(f"  When {capitalize(steps[1])}")
+            for step in steps[2:]:
+                lines.append(f"  And {capitalize(step)}")
+    lines.append(f"  Then {capitalize(expected)}")
+    return "\n".join(lines)

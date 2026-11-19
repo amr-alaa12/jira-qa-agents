@@ -23,7 +23,7 @@
       "Enter \"userexample.com\" in the email address field",
       "Submit the form"
     ],
-    "expected": "The email address is rejected, a validation error is shown next to the field, and this does not happen: the user receives a reset link by email"
+    "expected": "The email address is rejected, a validation error is shown next to the field, and the form submission is blocked"
   },
   {
     "story_key": "SHOP-1",
@@ -36,7 +36,7 @@
       "Leave the email address field empty",
       "Submit the form"
     ],
-    "expected": "The form is not submitted, a required-field message is shown for the email address, and this does not happen: the user receives a reset link by email"
+    "expected": "The form is not submitted, and a required-field message is shown for the email address"
   },
   {
     "story_key": "SHOP-1",
