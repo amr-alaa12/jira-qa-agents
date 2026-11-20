@@ -1,6 +1,7 @@
 name: Automated Bug & Defect Detection CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
