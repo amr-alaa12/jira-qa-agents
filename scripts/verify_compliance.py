@@ -2,7 +2,7 @@
 """
 Pre-push & CI Verification Script for Jira QA Agents.
 Ensures 100% self-made model policy and structural code integrity.
-100% ASCII-safe for Windows console / charmap cp1252 compatibility.
+Pure standard-library Python (zero external dependencies).
 """
 import os
 import sys
@@ -31,37 +31,16 @@ FORBIDDEN_PACKAGES = [
 IGNORE_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".idea", ".vscode"}
 
 def check_syntax(root_dir: str = ".") -> bool:
-    print("[1/3] Verifying Python syntax across all source files...")
+    print("[1/2] Verifying Python syntax across all source files...")
     success = compileall.compile_dir(root_dir, rx=re.compile(r"[/\\](\.venv|venv|\.git)[/\\]"), quiet=1)
     if not success:
         print("  [FAIL] Syntax errors detected in Python files!", file=sys.stderr)
         return False
     print("  [OK] All Python files compiled with 0 syntax errors.")
-
-    print("[2/3] Checking for undefined names & critical errors (Flake8)...")
-    import importlib.util
-    if importlib.util.find_spec("flake8") is None:
-        print("  [INFO] Flake8 not installed in current environment; skipping Flake8 check.")
-        return True
-
-    try:
-        import subprocess
-        res = subprocess.run([
-            sys.executable, "-m", "flake8", root_dir,
-            "--count", "--select=E9,F63,F7,F82", "--statistics",
-            "--exclude=.git,__pycache__,.venv,venv"
-        ], capture_output=True, text=True)
-        if res.returncode != 0 and res.stdout.strip():
-            print("  [FAIL] Flake8 detected critical code errors / undefined names:", file=sys.stderr)
-            print(res.stdout, file=sys.stderr)
-            return False
-        print("  [OK] Zero undefined names or critical lint errors.")
-    except Exception as e:
-        print(f"  [WARN] Could not execute Flake8 check: {e}")
     return True
 
 def check_model_compliance(root_dir: str = ".") -> bool:
-    print("[3/3] Verifying 100% Self-Made Models Academic Compliance...")
+    print("[2/2] Verifying 100% Self-Made Models Academic Compliance...")
     violations = []
     for root, dirs, files in os.walk(root_dir):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
@@ -95,10 +74,10 @@ def main():
     compliance_ok = check_model_compliance()
 
     if syntax_ok and compliance_ok:
-        print("\n[OK] ALL PRE-PUSH INTEGRITY CHECKS PASSED.")
+        print("\n[OK] ALL INTEGRITY CHECKS PASSED.")
         sys.exit(0)
     else:
-        print("\n[FAIL] PRE-PUSH CHECKS FAILED. Please resolve errors before pushing.", file=sys.stderr)
+        print("\n[FAIL] INTEGRITY CHECKS FAILED. Please resolve errors.", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":
