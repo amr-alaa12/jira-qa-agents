@@ -7,7 +7,7 @@
 
 **A Multi-Agent LLM Framework for Automated UI Test Generation, Quality Review, and Self-Healing**  
 *Graduation Project 2026/2027 — Faculty of Computer Science, Misr International University (MIU)*  
-**Supervision:** Dr. Nada Shorim, Eng. Abdelrahman Atef  
+**Supervision:** Dr. Nada Shorim, Eng. Asmaa Maher
 **Team Members:** Amr Alaa (Lead), Zayd Ali, Ahmed Hesham, Omar Rashwan, Moataz
 
 ---
