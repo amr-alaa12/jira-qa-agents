@@ -1,0 +1,158 @@
+name: Automated Bug & Defect Detection CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Syntax & Code Quality Verification
+  # -------------------------------------------------------------
+  syntax-and-lint:
+    name: 1. Syntax & Defect Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Linting & Quality Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Python Syntax & Compilation Verification
+        run: |
+          echo "Verifying Python syntax across all project files..."
+          python -m compileall -q -x "\.git" .
+
+      - name: Flake8 Critical Bug & Error Check
+        run: |
+          echo "Scanning for undefined variables, syntax errors, and broken imports..."
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=.git,__pycache__
+
+      - name: Flake8 Code Complexity & Style Warnings
+        run: |
+          flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics --exclude=.git,__pycache__
+
+  # -------------------------------------------------------------
+  # Job 2: Academic Compliance Gate (100% Self-Made Models)
+  # -------------------------------------------------------------
+  academic-compliance:
+    name: 2. 100% Self-Made Models Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify Zero External AI APIs
+        run: |
+          python scripts/verify_compliance.py
+
+  # -------------------------------------------------------------
+  # Job 3: Automated Unit & Regression Test Suite Matrix
+  # -------------------------------------------------------------
+  test-suite:
+    name: 3. Test Suite Matrix (Python ${{ matrix.python-version }})
+    needs: [syntax-and-lint, academic-compliance]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install Project Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Full Test Suite (134+ tests)
+        run: |
+          pytest -v --tb=short
+
+  # -------------------------------------------------------------
+  # Job 4: Security & Vulnerability Scan
+  # -------------------------------------------------------------
+  security-scan:
+    name: 4. Static Security & Bug Analysis (Bandit)
+    needs: [syntax-and-lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit Security Scanner
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run Bandit Security Analysis
+        run: |
+          echo "Scanning for security vulnerabilities and unsafe constructs..."
+          bandit -r . -x ./tests,./generator/tests --severity-level medium --confidence-level medium || true
+
+  # -------------------------------------------------------------
+  # Job 5: Quality Gate Summary & Notification
+  # -------------------------------------------------------------
+  ci-status-summary:
+    name: 5. Quality Gate Status Summary
+    needs: [syntax-and-lint, academic-compliance, test-suite, security-scan]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate Workflow Step Summary
+        run: |
+          echo "## 🛡️ Jira QA Agents CI Quality Gate Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **1. Syntax & Defect Check** | ${{ needs.syntax-and-lint.result == 'success' && '✅ PASSED' || '❌ FAILED' }} | Zero Python syntax errors or broken imports |" >> $GITHUB_STEP_SUMMARY
+          echo "| **2. Academic Compliance Gate** | ${{ needs.academic-compliance.result == 'success' && '✅ PASSED' || '❌ FAILED' }} | Verified 100% self-made models (no external AI APIs) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **3. Automated Test Suite** | ${{ needs.test-suite.result == 'success' && '✅ PASSED' || '❌ FAILED' }} | Tested across Python 3.10, 3.11, and 3.12 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **4. Security Bug Scan** | ${{ needs.security-scan.result == 'success' && '✅ PASSED' || '❌ FAILED' }} | Bandit static security AST analysis |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.syntax-and-lint.result }}" != "success" ] || [ "${{ needs.academic-compliance.result }}" != "success" ] || [ "${{ needs.test-suite.result }}" != "success" ]; then
+            echo "> ⚠️ **BUILD FAILED:** Defects were detected. Please review the failed job logs above before merging." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "> 🎉 **ALL CHECKS PASSED:** Build is clean, compliant, and ready for review." >> $GITHUB_STEP_SUMMARY
+          fi

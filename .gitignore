@@ -156,6 +156,11 @@ __marimo__/
 # Generated trained model
 /model/model.pkl
 
+# Generated PDF documentation & deliverables
+/Jira_QA_Agents_Phase2_Task_Distribution_60pct.pdf
+/MIU_SRS_Technical_Document_Template_and_Task_Allocation.pdf
+*.pdf
+
 # Operating system files
 .DS_Store
 Thumbs.db
