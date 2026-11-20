@@ -5,7 +5,7 @@ import io
 import json
 import re
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, List, Mapping, Optional, Sequence, Union
 
 from .text import to_gherkin
 

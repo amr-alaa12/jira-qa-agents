@@ -31,16 +31,32 @@ FORBIDDEN_PACKAGES = [
 IGNORE_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".idea", ".vscode"}
 
 def check_syntax(root_dir: str = ".") -> bool:
-    print("[1/2] Verifying Python syntax across all source files...")
+    print("[1/3] Verifying Python syntax across all source files...")
     success = compileall.compile_dir(root_dir, rx=re.compile(r"[/\\](\.venv|venv|\.git)[/\\]"), quiet=1)
-    if success:
-        print("  [OK] All Python files compiled with 0 syntax errors.")
-        return True
-    print("  [FAIL] Syntax errors detected in Python files!", file=sys.stderr)
-    return False
+    if not success:
+        print("  [FAIL] Syntax errors detected in Python files!", file=sys.stderr)
+        return False
+    print("  [OK] All Python files compiled with 0 syntax errors.")
+
+    print("[2/3] Checking for undefined names & critical errors (Flake8)...")
+    try:
+        import subprocess
+        res = subprocess.run([
+            sys.executable, "-m", "flake8", root_dir,
+            "--count", "--select=E9,F63,F7,F82", "--statistics",
+            "--exclude=.git,__pycache__,.venv,venv"
+        ], capture_output=True, text=True)
+        if res.returncode != 0:
+            print("  [FAIL] Flake8 detected critical code errors / undefined names:", file=sys.stderr)
+            print(res.stdout, file=sys.stderr)
+            return False
+        print("  [OK] Zero undefined names or critical lint errors.")
+    except Exception:
+        pass
+    return True
 
 def check_model_compliance(root_dir: str = ".") -> bool:
-    print("[2/2] Verifying 100% Self-Made Models Academic Compliance...")
+    print("[3/3] Verifying 100% Self-Made Models Academic Compliance...")
     violations = []
     for root, dirs, files in os.walk(root_dir):
         dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
