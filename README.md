@@ -1,6 +1,44 @@
 # Jira QA Agents
 
-**A Multi-Agent LLM Framework for Automated UI Test Generation and Self-Healing**
+[![CI Status](https://github.com/amr-alaa12/jira-qa-agents/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/amr-alaa12/jira-qa-agents/actions/workflows/ci.yml)
+[![Python 3.10 | 3.11 | 3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![Model Policy](https://img.shields.io/badge/models-100%25%20Self--Made%20(Zero%20APIs)-success.svg)](README.md)
+[![Tests](https://img.shields.io/badge/tests-134%20passed-brightgreen.svg)](generator/tests/)
+
+**A Multi-Agent LLM Framework for Automated UI Test Generation, Quality Review, and Self-Healing**  
+*Graduation Project 2026/2027 — Faculty of Computer Science, Misr International University (MIU)*  
+**Supervision:** Dr. Nada Shorim, Eng. Abdelrahman Atef  
+**Team Members:** Amr Alaa (Lead), Zayd Ali, Ahmed Hesham, Omar Rashwan, Moataz
+
+---
+
+## 🛡️ Team Collaboration & Safe Push Guide (Direct to Main)
+
+Since all team members push directly to `main`, we enforce **automated local guardrails and cloud CI** so no one accidentally breaks the branch:
+
+### 1. One-Time Setup for Every Member
+Run the installer to activate the Git Pre-Push Guardrail:
+- **Windows (Double-click):** `install_hooks.bat`
+- **Or in terminal:**
+  ```bash
+  python scripts/install_hooks.py
+  ```
+
+### 2. How the Pre-Push Guardrail Protects You
+Every time you run `git push origin main`, Git automatically verifies:
+1. **Python Syntax:** Confirms zero syntax errors or broken imports across all files.
+2. **Academic Compliance:** Confirms zero forbidden ready-made AI APIs (`openai`, `anthropic`, `google.generativeai`, `transformers`, `langchain`, `crewai`).
+3. **Unit Tests:** Executes the full 134-test suite.
+
+> **Note:** If any test or syntax check fails, Git **cancels the push locally** before it reaches GitHub, protecting your teammates from broken pulls.
+
+### 3. Safe Push Command (Avoid Merge Conflicts)
+Before pushing, always rebase to pull your teammates' latest work cleanly on top:
+```bash
+git pull --rebase origin main && git push origin main
+```
+
+---
 
 ## Project Overview
 

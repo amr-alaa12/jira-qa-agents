@@ -2,11 +2,21 @@
 """
 Pre-push & CI Verification Script for Jira QA Agents.
 Ensures 100% self-made model policy and structural code integrity.
+100% ASCII-safe for Windows console / charmap cp1252 compatibility.
 """
 import os
 import sys
 import re
 import compileall
+
+# Ensure UTF-8 output handling without crashing on Windows cp1252
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 FORBIDDEN_PACKAGES = [
     r"\bopenai\b",
@@ -24,9 +34,9 @@ def check_syntax(root_dir: str = ".") -> bool:
     print("[1/2] Verifying Python syntax across all source files...")
     success = compileall.compile_dir(root_dir, rx=re.compile(r"[/\\](\.venv|venv|\.git)[/\\]"), quiet=1)
     if success:
-        print("  ✓ All Python files compiled with 0 syntax errors.")
+        print("  [OK] All Python files compiled with 0 syntax errors.")
         return True
-    print("  ✗ Syntax errors detected in Python files!", file=sys.stderr)
+    print("  [FAIL] Syntax errors detected in Python files!", file=sys.stderr)
     return False
 
 def check_model_compliance(root_dir: str = ".") -> bool:
@@ -44,16 +54,16 @@ def check_model_compliance(root_dir: str = ".") -> bool:
                             if stripped.startswith("import ") or stripped.startswith("from "):
                                 for pattern in FORBIDDEN_PACKAGES:
                                     if re.search(pattern, stripped):
-                                        violations.append(f"  ✗ {filepath}:{line_num} -> {stripped}")
+                                        violations.append(f"  [FORBIDDEN] {filepath}:{line_num} -> {stripped}")
                 except Exception as e:
-                    violations.append(f"  ✗ Could not read {filepath}: {e}")
+                    violations.append(f"  [ERROR] Could not read {filepath}: {e}")
 
     if violations:
         print("\n".join(violations), file=sys.stderr)
         print("\n[CRITICAL FAILURE] Academic compliance check failed! External ready-made AI models/APIs are forbidden.", file=sys.stderr)
         return False
 
-    print("  ✓ Academic compliance verified: Zero forbidden ready-made AI APIs detected (100% Self-Made).")
+    print("  [OK] Academic compliance verified: Zero forbidden ready-made AI APIs detected (100% Self-Made).")
     return True
 
 def main():
@@ -64,10 +74,10 @@ def main():
     compliance_ok = check_model_compliance()
 
     if syntax_ok and compliance_ok:
-        print("\n✓ ALL PRE-PUSH INTEGRITY CHECKS PASSED.")
+        print("\n[OK] ALL PRE-PUSH INTEGRITY CHECKS PASSED.")
         sys.exit(0)
     else:
-        print("\n✗ PRE-PUSH CHECKS FAILED. Please resolve errors before pushing.", file=sys.stderr)
+        print("\n[FAIL] PRE-PUSH CHECKS FAILED. Please resolve errors before pushing.", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":

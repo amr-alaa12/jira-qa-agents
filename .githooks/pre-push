@@ -1,0 +1,18 @@
+#!/bin/sh
+# Git Pre-Push Hook for Jira QA Agents
+# Sets UTF-8 encoding environment to prevent Windows console cp1252 charmap crashes
+
+export PYTHONIOENCODING=utf-8
+
+if [ -f ".venv/Scripts/python.exe" ]; then
+    PY=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PY=".venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+    PY="python3"
+else
+    PY="python"
+fi
+
+"$PY" scripts/pre_push.py
+exit $?
